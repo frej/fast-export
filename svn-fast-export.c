@@ -58,6 +58,7 @@ int dump_blob(svn_fs_root_t *root, char *full_path, apr_pool_t *pool)
     SVN_ERR(svn_stream_copy(stream, outstream, pool));
 
     fprintf(stdout, "\n");
+    fflush(stdout);
 
     return 0;
 }
@@ -104,6 +105,7 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
         if (change->change_kind == svn_fs_path_change_delete) {
             *(char **)apr_array_push(file_changes) = ((char *)svn_string_createf(pool, "D %s", path + strlen(TRUNK))->data);
         } else {
+            char *file_change;
             *(char **)apr_array_push(file_changes) = (char *)svn_string_createf(pool, "M 644 :%u %s", mark, path + strlen(TRUNK))->data;
             fprintf(stdout, "blob\nmark :%u\n", mark++);
             dump_blob(root_obj, (char *)path, revpool);
@@ -124,10 +126,11 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
     fprintf(stdout, "commit refs/heads/master\n");
     fprintf(stdout, "committer %s <%s@localhost> %ld -0000\n", author->data, author->data, get_epoch((char *)svndate->data));
     fprintf(stdout, "data %d\n", svnlog->len);
-    fprintf(stdout, svnlog->data);
+    fputs(svnlog->data, stdout);
     fprintf(stdout, "\n");
     fprintf(stdout, apr_array_pstrcat(pool, file_changes, '\n'));
     fprintf(stdout, "\n\n");
+    fflush(stdout);
 
     svn_pool_destroy(revpool);
 
