@@ -34,10 +34,11 @@
 
 time_t get_epoch(char *svn_date)
 {
-    struct tm tm;
+    struct tm tm = {0};
     char *date = malloc(strlen(svn_date) * sizeof(char *));
     strncpy(date, svn_date, strlen(svn_date) - 8);
     strptime(date, "%Y-%m-%dT%H:%M:%S", &tm);
+    free(date);
     return mktime(&tm);
 }
 
@@ -156,7 +157,7 @@ int crawl_revisions(char *repos_path)
     SVN_ERR(svn_fs_youngest_rev(&youngest_rev, fs, pool));
 
     min_rev = 1;
-    max_rev = youngest_rev;
+    max_rev = 100; // youngest_rev;
 
     subpool = svn_pool_create(pool);
     for (rev = min_rev; rev <= max_rev; rev++) {
