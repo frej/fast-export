@@ -157,7 +157,7 @@ int crawl_revisions(char *repos_path)
     SVN_ERR(svn_fs_youngest_rev(&youngest_rev, fs, pool));
 
     min_rev = 1;
-    max_rev = 100; // youngest_rev;
+    max_rev = youngest_rev;
 
     subpool = svn_pool_create(pool);
     for (rev = min_rev; rev <= max_rev; rev++) {
