@@ -69,7 +69,7 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
     const void *key;
     void *val;
  
-    fprintf(stderr, "Committing revision %li... ", rev);
+    fprintf(stderr, "Exporting revision %li... ", rev);
 
     SVN_ERR(svn_fs_revision_root(&root_obj, fs, rev, pool));
     SVN_ERR(svn_fs_paths_changed(&changes, root_obj, pool));

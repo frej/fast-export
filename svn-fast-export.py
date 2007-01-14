@@ -44,7 +44,7 @@ def dump_file_blob(root, full_path, pool):
 
 
 def export_revision(rev, repo, fs, pool):
-    sys.stderr.write("Committing revision %s... " % rev)
+    sys.stderr.write("Exporting revision %s... " % rev)
 
     revpool = svn_pool_create(pool)
     svn_pool_clear(revpool)
