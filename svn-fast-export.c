@@ -92,9 +92,7 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
         }
 
         if (change->change_kind == svn_fs_path_change_delete) {
-            fprintf(stderr, "       delete\n");
             *(char **)apr_array_push(file_changes) = ((char *)svn_string_createf(pool, "D %s", path + strlen(TRUNK))->data);
-            fprintf(stderr, "       done\n");
         } else {
             *(char **)apr_array_push(file_changes) = (char *)svn_string_createf(pool, "M 644 :%u %s", mark, path + strlen(TRUNK))->data;
             fprintf(stdout, "blob\nmark :%u\n", mark++);
