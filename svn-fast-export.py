@@ -19,28 +19,18 @@ import gc, sys, os.path
 from optparse import OptionParser
 from time import sleep, mktime, localtime, strftime, strptime
 from svn.fs import svn_fs_dir_entries, svn_fs_file_length, svn_fs_file_contents, svn_fs_is_dir, svn_fs_revision_root, svn_fs_youngest_rev, svn_fs_revision_proplist, svn_fs_revision_prop, svn_fs_paths_changed
-from svn.core import svn_pool_create, svn_pool_clear, svn_pool_destroy, svn_stream_read, svn_stream_close, run_app
+from svn.core import svn_pool_create, svn_pool_clear, svn_pool_destroy, svn_stream_read, svn_stream_for_stdout, svn_stream_copy, svn_stream_close, run_app
 from svn.repos import svn_repos_open, svn_repos_fs
 
 ct_short = ['M', 'A', 'D', 'R', 'X']
 
 def dump_file_blob(root, full_path, pool):
-    # Use an iteration subpool.
-    subpool = svn_pool_create(pool)
-
-    # Clear the iteration subpool.
-    svn_pool_clear(subpool)
-
-    # print full_path
-    stream_length = svn_fs_file_length(root, full_path, subpool)
-    stream = svn_fs_file_contents(root, full_path, subpool)
-    contents = svn_stream_read(stream, int(stream_length))
+    stream_length = svn_fs_file_length(root, full_path, pool)
+    stream = svn_fs_file_contents(root, full_path, pool)
     sys.stdout.write("data %s\n" % stream_length)
-    sys.stdout.write(contents)
+    ostream = svn_stream_for_stdout(pool)
+    svn_stream_copy(stream, ostream, pool)
     sys.stdout.write("\n")
-
-    # Destroy the iteration subpool.
-    svn_pool_destroy(subpool)
 
 
 def export_revision(rev, repo, fs, pool):
@@ -71,10 +61,10 @@ def export_revision(rev, repo, fs, pool):
             if c_t == 'D':
                 file_changes.append("D %s" % path.replace(trunk_path, ''))
             else:
-                sys.stdout.write("blob\nmark :%s\n" % i)
                 marks[i] = path.replace(trunk_path, '')
-                # dump_file_blob(root_obj, path, revpool)
                 file_changes.append("M 644 :%s %s" % (i, marks[i]))
+                sys.stdout.write("blob\nmark :%s\n" % i)
+                dump_file_blob(root, path, revpool)
                 i += 1
 
     # Get the commit author and message
@@ -94,14 +84,15 @@ def export_revision(rev, repo, fs, pool):
     svndate = props['svn:date'][0:-8]
     commit_time = mktime(strptime(svndate, '%Y-%m-%dT%H:%M:%S'))
     sys.stdout.write("commit refs/heads/master\n")
-    #sys.stdout.write("committer %s %s -0000\n" % (author, int(commit_time)))
-    #sys.stdout.write("data %s\n" % len(props['svn:log']))
-    #sys.stdout.write(props['svn:log'])
-    #sys.stdout.write("\n")
+    sys.stdout.write("committer %s %s -0000\n" % (author, int(commit_time)))
+    sys.stdout.write("data %s\n" % len(props['svn:log']))
+    sys.stdout.write(props['svn:log'])
+    sys.stdout.write("\n")
     sys.stdout.write('\n'.join(file_changes))
     sys.stdout.write("\n\n")
 
     svn_pool_destroy(revpool)
+
     sys.stderr.write("done!\n")
 
     #if rev % 1000 == 0:

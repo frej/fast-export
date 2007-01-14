@@ -44,20 +44,18 @@ time_t get_epoch(char *svn_date)
 int dump_blob(svn_fs_root_t *root, char *full_path, apr_pool_t *pool)
 {
     svn_filesize_t stream_length;
-    svn_stream_t *stream;
+    svn_stream_t *stream, *outstream;
     apr_size_t len;
     char buf[8];
 
     SVN_ERR(svn_fs_file_length(&stream_length, root, full_path, pool));
     SVN_ERR(svn_fs_file_contents(&stream, root, full_path, pool));
 
-    fprintf(stdout, "data %li\n", stream_length);
+    fprintf(stdout, "data %lu\n", stream_length);
+    fflush(stdout);
 
-    do {
-        len = sizeof(buf);
-        SVN_ERR(svn_stream_read(stream, buf, &len));
-        fprintf (stdout, "%s\0", buf);
-    } while (len);
+    SVN_ERR(svn_stream_for_stdout(&outstream, pool));
+    SVN_ERR(svn_stream_copy(stream, outstream, pool));
 
     fprintf(stdout, "\n");
 
@@ -81,7 +79,7 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
     const void *key;
     void *val;
  
-    fprintf(stderr, "Exporting revision %li... ", rev);
+    fprintf(stderr, "Exporting revision %ld... ", rev);
 
     SVN_ERR(svn_fs_revision_root(&root_obj, fs, rev, pool));
     SVN_ERR(svn_fs_paths_changed(&changes, root_obj, pool));
@@ -108,7 +106,7 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
         } else {
             *(char **)apr_array_push(file_changes) = (char *)svn_string_createf(pool, "M 644 :%u %s", mark, path + strlen(TRUNK))->data;
             fprintf(stdout, "blob\nmark :%u\n", mark++);
-            // dump_blob(root_obj, (char *)path, revpool);
+            dump_blob(root_obj, (char *)path, revpool);
         }
     }
 
