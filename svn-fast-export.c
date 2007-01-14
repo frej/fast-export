@@ -8,9 +8,11 @@
  * License: MIT <http://www.opensource.org/licenses/mit-license.php>
  */
 
+#define _XOPEN_SOURCE
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
@@ -29,6 +31,15 @@
 #define apr_sane_push(arr, contents) *(char **)apr_array_push(arr) = contents
 
 #define TRUNK "/trunk/"
+
+time_t get_epoch(char *svn_date)
+{
+    struct tm tm;
+    char *date = malloc(strlen(svn_date) * sizeof(char *));
+    strncpy(date, svn_date, strlen(svn_date) - 8);
+    strptime(date, "%Y-%m-%dT%H:%M:%S", &tm);
+    return mktime(&tm);
+}
 
 int dump_blob(svn_fs_root_t *root, char *full_path, apr_pool_t *pool)
 {
@@ -63,6 +74,7 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
     svn_fs_path_change_t *change;
     svn_fs_root_t *root_obj;
     svn_boolean_t is_dir;
+    svn_string_t *author, *committer, *svndate, *svnlog;
 
     char *path, *file_change;
     unsigned int mark;
@@ -106,7 +118,16 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
         return 0;
     }
 
+    author = apr_hash_get(props, "svn:author", APR_HASH_KEY_STRING);
+    if (!author) { author = svn_string_create("nobody", pool); }
+    svndate = apr_hash_get(props, "svn:date", APR_HASH_KEY_STRING);
+    svnlog = apr_hash_get(props, "svn:log", APR_HASH_KEY_STRING);
+
     fprintf(stdout, "commit refs/heads/master\n");
+    fprintf(stdout, "committer %s <%s@localhost> %ld -0000\n", author->data, author->data, get_epoch((char *)svndate->data));
+    fprintf(stdout, "data %d\n", svnlog->len);
+    fprintf(stdout, svnlog->data);
+    fprintf(stdout, "\n");
     fprintf(stdout, apr_array_pstrcat(pool, file_changes, '\n'));
     fprintf(stdout, "\n\n");
 
