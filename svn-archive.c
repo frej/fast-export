@@ -32,6 +32,8 @@
 
 #define TRUNK "/trunk"
 
+static time_t archive_time;
+
 time_t get_epoch(char *svn_date)
 {
     struct tm tm = {0};
@@ -42,19 +44,65 @@ time_t get_epoch(char *svn_date)
     return mktime(&tm);
 }
 
-int tar_header(char *path, char *node, size_t size, svn_boolean_t is_dir)
+int tar_header(apr_pool_t *pool, char *path, char *node, size_t f_size)
 {
-    char buf[512];
-    memset(buf, '\0', sizeof(buf));
-    strncpy(buf, node, strlen(node));
-    strncpy(buf+257, "ustar  ", 6);
-    strncpy(buf+265, "clee", 4);
-    strncpy(buf+297, "clee", 4);
-    strncpy(buf+156, (is_dir ? "5" : "0"), 1);
-    strncpy(buf+345, path, strlen(path));
+    char          buf[512];
+    unsigned int  i, checksum;
+    svn_boolean_t is_dir;
+
+    memset(buf, 0, sizeof(buf));
+
+    fprintf(stderr, "Writing header for path (%s) node (%s)\n", path, node);
+
+    if ((strlen(path) == 0) && (strlen(node) == 0)) {
+        return 0;
+    }
+
+    if (strlen(node) == 0) {
+        is_dir = 1;
+    } else {
+        is_dir = 0;
+    }
+
+    if (strlen(path) == 0) {
+        strncpy(buf, apr_psprintf(pool, "%s", node), 99);
+    } else if (strlen(path) + strlen(node) < 100) {
+        strncpy(buf, apr_psprintf(pool, "%s/%s", path+1, node), 99);
+    } else {
+        fprintf(stderr, "really long file path...\n");
+        strncpy(&buf[0], node, 99);
+        strncpy(&buf[345], path+1, 154);
+    }
+
+    strncpy(&buf[100], apr_psprintf(pool, "%07o", (is_dir ? 0755 : 0644)), 7);
+    strncpy(&buf[108], apr_psprintf(pool, "%07o", 1000), 7);
+    strncpy(&buf[116], apr_psprintf(pool, "%07o", 1000), 7);
+    strncpy(&buf[124], apr_psprintf(pool, "%011lo", f_size), 11);
+    strncpy(&buf[136], apr_psprintf(pool, "%011lo", archive_time), 11);
+    strncpy(&buf[156], (is_dir ? "5" : "0"), 1);
+    strncpy(&buf[257], "ustar  ", 8);
+    strncpy(&buf[265], "clee", 31);
+    strncpy(&buf[297], "clee", 31);
+    // strncpy(&buf[329], apr_psprintf(pool, "%07o", 0), 7);
+    // strncpy(&buf[337], apr_psprintf(pool, "%07o", 0), 7);
+
+    strncpy(&buf[148], "        ", 8);
+    checksum = 0;
+    for (i = 0; i < sizeof(buf); i++) {
+        checksum += buf[i];
+    }
+    strncpy(&buf[148], apr_psprintf(pool, "%07o", checksum & 0x1fffff), 7);
 
     fwrite(buf, sizeof(char), sizeof(buf), stdout);
+
     return 0;
+}
+
+int tar_footer()
+{
+    char block[1024];
+    memset(block, 0, sizeof(block));
+    fwrite(block, sizeof(char), sizeof(block), stdout);
 }
 
 int dump_blob(svn_fs_root_t *root, char *prefix, char *path, char *node, apr_pool_t *pool)
@@ -69,14 +117,13 @@ int dump_blob(svn_fs_root_t *root, char *prefix, char *path, char *node, apr_poo
     SVN_ERR(svn_fs_file_length(&stream_length, root, full_path, pool));
     SVN_ERR(svn_fs_file_contents(&stream, root, full_path, pool));
 
-    tar_header(path, node, stream_length, 0);
+    tar_header(pool, path, node, stream_length);
 
     do {
         len = sizeof(buf);
         memset(buf, '\0', sizeof(buf));
         SVN_ERR(svn_stream_read(stream, buf, &len));
         fwrite(buf, sizeof(char), sizeof(buf), stdout);
-        fprintf(stderr, "len %d\n", len);
     } while (len == sizeof(buf));
 
     return 0;
@@ -94,7 +141,7 @@ int dump_tree(svn_fs_root_t *root, char *prefix, char *path, apr_pool_t *pool)
 
     svn_boolean_t    is_dir;
 
-    tar_header("", path, -1, 1);
+    tar_header(pool, path, "", 0);
 
     SVN_ERR(svn_fs_dir_entries(&dir_entries, root, apr_psprintf(pool, "%s/%s", prefix, path), pool));
 
@@ -108,9 +155,9 @@ int dump_tree(svn_fs_root_t *root, char *prefix, char *path, apr_pool_t *pool)
         subpath = apr_psprintf(subpool, "%s/%s", path, node);
         full_path = apr_psprintf(subpool, "%s%s", prefix, subpath);
 
+        fprintf(stderr, "in dump_tree, full_path %s\n", full_path);
         svn_fs_is_dir(&is_dir, root, full_path, subpool);
 
-        fprintf(stderr, "path: %s\n", full_path);
         if (is_dir) {
             dump_tree(root, prefix, subpath, subpool);
         } else {
@@ -152,16 +199,17 @@ int crawl_revisions(char *repos_path, char *root_path)
 
     export_rev = youngest_rev;
 
-    fprintf(stderr, "Exporting archive of r%ld... ", export_rev);
+    fprintf(stderr, "Exporting archive of r%ld... \n", export_rev);
 
     SVN_ERR(svn_fs_revision_root(&root_obj, fs, export_rev, pool));
     SVN_ERR(svn_fs_revision_proplist(&props, fs, export_rev, pool));
 
-    svnlog  = apr_hash_get(props, "svn:log", APR_HASH_KEY_STRING);
     svndate = apr_hash_get(props, "svn:date", APR_HASH_KEY_STRING);
-    author  = apr_hash_get(props, "svn:author", APR_HASH_KEY_STRING);
+    archive_time = get_epoch((char *)svndate->data);
 
     dump_tree(root_obj, root_path, "", pool);
+
+    tar_footer();
 
     fprintf(stderr, "done!\n");
 
@@ -170,8 +218,6 @@ int crawl_revisions(char *repos_path, char *root_path)
 
 int main(int argc, char *argv[])
 {
-    apr_getopt_t *os;
-
     if (argc < 2) {
         fprintf(stderr, "usage: %s REPOS_PATH [prefix]\n", argv[0]);
         return -1;
