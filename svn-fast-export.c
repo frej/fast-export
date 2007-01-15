@@ -129,7 +129,7 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
     fprintf(stdout, "data %d\n", svnlog->len);
     fputs(svnlog->data, stdout);
     fprintf(stdout, "\n");
-    fprintf(stdout, apr_array_pstrcat(pool, file_changes, '\n'));
+    fputs(apr_array_pstrcat(pool, file_changes, '\n'), stdout);
     fprintf(stdout, "\n\n");
     fflush(stdout);
 
