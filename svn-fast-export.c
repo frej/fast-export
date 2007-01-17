@@ -18,13 +18,13 @@
 #define PATH_MAX 4096
 #endif
 
-#include <apr_general.h>
 #include <apr_lib.h>
 #include <apr_getopt.h>
+#include <apr_general.h>
 
-#include <svn_types.h>
+#include <svn_fs.h>
 #include <svn_pools.h>
-#include <svn_repos.h>
+#include <svn_types.h>
 
 #undef SVN_ERR
 #define SVN_ERR(expr) SVN_INT_ERR(expr)
@@ -44,10 +44,9 @@ time_t get_epoch(char *svn_date)
 
 int dump_blob(svn_fs_root_t *root, char *full_path, apr_pool_t *pool)
 {
+    apr_size_t     len;
+    svn_stream_t   *stream, *outstream;
     svn_filesize_t stream_length;
-    svn_stream_t *stream, *outstream;
-    apr_size_t len;
-    char buf[8];
 
     SVN_ERR(svn_fs_file_length(&stream_length, root, full_path, pool));
     SVN_ERR(svn_fs_file_contents(&stream, root, full_path, pool));
@@ -64,27 +63,25 @@ int dump_blob(svn_fs_root_t *root, char *full_path, apr_pool_t *pool)
     return 0;
 }
 
-int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_t *pool)
+int export_revision(svn_revnum_t rev, svn_fs_t *fs, apr_pool_t *pool)
 {
-    apr_array_header_t *file_changes;
-    apr_hash_t *changes, *props;
-    apr_hash_index_t *i;
-    apr_pool_t *revpool;
-
+    unsigned int         mark;
+    const void           *key;
+    void                 *val;
+    char                 *path, *file_change;
+    apr_pool_t           *revpool;
+    apr_hash_t           *changes, *props;
+    apr_hash_index_t     *i;
+    apr_array_header_t   *file_changes;
+    svn_string_t         *author, *committer, *svndate, *svnlog;
+    svn_boolean_t        is_dir;
+    svn_fs_root_t        *fs_root;
     svn_fs_path_change_t *change;
-    svn_fs_root_t *root_obj;
-    svn_boolean_t is_dir;
-    svn_string_t *author, *committer, *svndate, *svnlog;
 
-    char *path, *file_change;
-    unsigned int mark;
-    const void *key;
-    void *val;
- 
     fprintf(stderr, "Exporting revision %ld... ", rev);
 
-    SVN_ERR(svn_fs_revision_root(&root_obj, fs, rev, pool));
-    SVN_ERR(svn_fs_paths_changed(&changes, root_obj, pool));
+    SVN_ERR(svn_fs_revision_root(&fs_root, fs, rev, pool));
+    SVN_ERR(svn_fs_paths_changed(&changes, fs_root, pool));
     SVN_ERR(svn_fs_revision_proplist(&props, fs, rev, pool));
 
     revpool = svn_pool_create(pool);
@@ -97,19 +94,18 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
         path = (char *)key;
         change = (svn_fs_path_change_t *)val;
 
-        SVN_ERR(svn_fs_is_dir(&is_dir, root_obj, path, revpool));
+        SVN_ERR(svn_fs_is_dir(&is_dir, fs_root, path, revpool));
 
         if (is_dir || strncmp(TRUNK, path, strlen(TRUNK))) {
             continue;
         }
 
         if (change->change_kind == svn_fs_path_change_delete) {
-            *(char **)apr_array_push(file_changes) = ((char *)svn_string_createf(pool, "D %s", path + strlen(TRUNK))->data);
+            apr_sane_push(file_changes, (char *)svn_string_createf(pool, "D %s", path + strlen(TRUNK))->data);
         } else {
-            char *file_change;
-            *(char **)apr_array_push(file_changes) = (char *)svn_string_createf(pool, "M 644 :%u %s", mark, path + strlen(TRUNK))->data;
+            apr_sane_push(file_changes, (char *)svn_string_createf(pool, "M 644 :%u %s", mark, path + strlen(TRUNK))->data);
             fprintf(stdout, "blob\nmark :%u\n", mark++);
-            dump_blob(root_obj, (char *)path, revpool);
+            dump_blob(fs_root, (char *)path, revpool);
         }
     }
 
@@ -120,7 +116,8 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
     }
 
     author = apr_hash_get(props, "svn:author", APR_HASH_KEY_STRING);
-    if (!author) { author = svn_string_create("nobody", pool); }
+    if (svn_string_isempty(author))
+        author = svn_string_create("nobody", pool);
     svndate = apr_hash_get(props, "svn:date", APR_HASH_KEY_STRING);
     svnlog = apr_hash_get(props, "svn:log", APR_HASH_KEY_STRING);
 
@@ -142,18 +139,14 @@ int export_revision(svn_revnum_t rev, svn_repos_t *repo, svn_fs_t *fs, apr_pool_
 
 int crawl_revisions(char *repos_path)
 {
-    apr_pool_t *pool, *subpool;
-    svn_repos_t *repos;
+    apr_pool_t   *pool, *subpool;
+    svn_fs_t     *fs;
     svn_revnum_t youngest_rev, min_rev, max_rev, rev;
-    svn_fs_t *fs;
 
     pool = svn_pool_create(NULL);
 
-    SVN_ERR(svn_repos_open(&repos, repos_path, pool));
-
-    fs = svn_repos_fs(repos);
-
     SVN_ERR(svn_fs_initialize(pool));
+    SVN_ERR(svn_fs_open(&fs, repos_path, NULL, pool));
     SVN_ERR(svn_fs_youngest_rev(&youngest_rev, fs, pool));
 
     min_rev = 1;
@@ -162,7 +155,7 @@ int crawl_revisions(char *repos_path)
     subpool = svn_pool_create(pool);
     for (rev = min_rev; rev <= max_rev; rev++) {
         svn_pool_clear(subpool);
-        export_revision(rev, repos, fs, subpool);
+        export_revision(rev, fs, subpool);
     }
 
     svn_pool_destroy(pool);
