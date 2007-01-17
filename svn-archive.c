@@ -19,12 +19,13 @@
 #endif
 
 #include <apr_general.h>
-#include <apr_lib.h>
+#include <apr_strings.h>
 #include <apr_getopt.h>
+#include <apr_lib.h>
 
 #include <svn_types.h>
 #include <svn_pools.h>
-#include <svn_repos.h>
+#include <svn_fs.h>
 
 #undef SVN_ERR
 #define SVN_ERR(expr) SVN_INT_ERR(expr)
@@ -51,8 +52,6 @@ int tar_header(apr_pool_t *pool, char *path, char *node, size_t f_size)
     svn_boolean_t is_dir;
 
     memset(buf, 0, sizeof(buf));
-
-    fprintf(stderr, "Writing header for path (%s) node (%s)\n", path, node);
 
     if ((strlen(path) == 0) && (strlen(node) == 0)) {
         return 0;
@@ -155,7 +154,6 @@ int dump_tree(svn_fs_root_t *root, char *prefix, char *path, apr_pool_t *pool)
         subpath = apr_psprintf(subpool, "%s/%s", path, node);
         full_path = apr_psprintf(subpool, "%s%s", prefix, subpath);
 
-        fprintf(stderr, "in dump_tree, full_path %s\n", full_path);
         svn_fs_is_dir(&is_dir, root, full_path, subpool);
 
         if (is_dir) {
@@ -170,44 +168,33 @@ int dump_tree(svn_fs_root_t *root, char *prefix, char *path, apr_pool_t *pool)
     return 0;
 }
 
-int crawl_revisions(char *repos_path, char *root_path)
+int crawl_filesystem(char *repos_path, char *root_path, apr_pool_t *pool)
 {
-    const void           *key;
-    void                 *val;
-    char                 *path, *file_change;
- 
-    apr_pool_t           *pool;
-    apr_hash_index_t     *i;
+    char                 *path;
+
     apr_hash_t           *props;
+    apr_hash_index_t     *i;
 
     svn_fs_t             *fs;
-    svn_repos_t          *repos;
-    svn_string_t         *author, *committer, *svndate, *svnlog;
+    svn_string_t         *svndate;
     svn_revnum_t         youngest_rev, export_rev;
-    svn_boolean_t        is_dir;
-    svn_fs_root_t        *root_obj;
-    svn_fs_path_change_t *change;
-
-    pool = svn_pool_create(NULL);
-
-    SVN_ERR(svn_repos_open(&repos, repos_path, pool));
-
-    fs = svn_repos_fs(repos);
+    svn_fs_root_t        *fs_root;
 
     SVN_ERR(svn_fs_initialize(pool));
+    SVN_ERR(svn_fs_open(&fs, repos_path, NULL, pool));
     SVN_ERR(svn_fs_youngest_rev(&youngest_rev, fs, pool));
 
     export_rev = youngest_rev;
 
-    fprintf(stderr, "Exporting archive of r%ld... \n", export_rev);
-
-    SVN_ERR(svn_fs_revision_root(&root_obj, fs, export_rev, pool));
+    SVN_ERR(svn_fs_revision_root(&fs_root, fs, export_rev, pool));
     SVN_ERR(svn_fs_revision_proplist(&props, fs, export_rev, pool));
 
     svndate = apr_hash_get(props, "svn:date", APR_HASH_KEY_STRING);
     archive_time = get_epoch((char *)svndate->data);
 
-    dump_tree(root_obj, root_path, "", pool);
+    fprintf(stderr, "Exporting archive of r%ld... \n", export_rev);
+
+    dump_tree(fs_root, root_path, "", pool);
 
     tar_footer();
 
@@ -218,6 +205,17 @@ int crawl_revisions(char *repos_path, char *root_path)
 
 int main(int argc, char *argv[])
 {
+    apr_pool_t           *pool;
+    apr_getopt_t         *options;
+
+    apr_getopt_option_t long_options[] = {
+        { "help",     'h', 0 },
+        { "prefix",   'p', 0 },
+        { "basename", 'b', 0 },
+        { "revision", 'r', 0 },
+        { NULL,       0,   0 }
+    };
+
     if (argc < 2) {
         fprintf(stderr, "usage: %s REPOS_PATH [prefix]\n", argv[0]);
         return -1;
@@ -228,7 +226,9 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    crawl_revisions(argv[1], (argc == 3 ? argv[2] : TRUNK));
+    pool = svn_pool_create(NULL);
+
+    crawl_filesystem(argv[1], (argc == 3 ? argv[2] : TRUNK), pool);
 
     apr_terminate();
 
