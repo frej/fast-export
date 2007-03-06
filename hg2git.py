@@ -90,6 +90,9 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
     # and kill reference so we won't init it again
     wr('from %s' % src)
     heads[branch]=''
+    sys.stderr.write('Initializing branch [%s] to parent [%s]\n' %
+        (branch,src))
+    link=src # avoid making a merge commit for incremental import
   elif not heads.has_key(branch) and revision>0:
     # newly created branch and not the first one: connect to parent
     tmp=get_parent_mark(parents[0],marks)
