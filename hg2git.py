@@ -119,13 +119,21 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
   last[branch]=revision
   heads[branch]=''
 
+  # just wipe the branch clean, all full manifest contents
+  wr('deleteall')
+
   ctx=repo.changectx(str(revision))
   man=ctx.manifest()
 
-  wr('deleteall')
+  #for f in man.keys():
+  #  fctx=ctx.filectx(f)
+  #  d=fctx.data()
+  #  wr('M %s inline %s' % (gitmode(man.execf(f)),f))
+  #  wr('data %d' % len(d)) # had some trouble with size()
+  #  wr(d)
 
-  for f in man.keys():
-    fctx=ctx.filectx(f)
+  for fctx in ctx.filectxs():
+    f=fctx.path()
     d=fctx.data()
     wr('M %s inline %s' % (gitmode(man.execf(f)),f))
     wr('data %d' % len(d)) # had some trouble with size()
