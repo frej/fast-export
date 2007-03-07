@@ -1,6 +1,6 @@
 #!/bin/sh
 
-USAGE='[-m max] repo'
+USAGE='[-m max] [--quiet] repo'
 LONG_USAGE='Import hg repository <repo> up to either tip or <max>'
 ROOT="`dirname $0`"
 REPO=""
@@ -9,6 +9,7 @@ PFX="hg2git"
 SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
+QUIET=""
 
 . git-sh-setup
 cd_to_toplevel
@@ -19,6 +20,9 @@ do
     -m)
       shift
       MAX="$1"
+      ;;
+    --q|--qu|--qui|--quie|--quiet)
+      QUIET="--quiet"
       ;;
     -*)
       usage
@@ -48,7 +52,7 @@ GIT_DIR="$GIT_DIR" python "$ROOT/hg2git.py" \
   "$GIT_DIR/$PFX-$SFX_MARKS" \
   "$GIT_DIR/$PFX-$SFX_HEADS" \
   "$GIT_DIR/$PFX-$SFX_STATE" \
-| git-fast-import --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
+| git-fast-import $QUIET --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
 || die 'Git fast-import failed'
 
 # move recent marks cache out of the way...
