@@ -66,29 +66,31 @@ def get_parent_mark(parent,marks):
   otherwise the SHA1 from the cache."""
   return marks.get(str(parent+1),':%d' % (parent+1))
 
-def mismatch(x,f1,f2):
+def mismatch(f1,f2):
   """See if two revisions of a file are not equal."""
   return node.hex(f1)!=node.hex(f2)
 
-def outer_set(dleft,dright,l,r):
-  """Loop over our repository in and find all changed and missing files."""
+def outer_set(dleft,dright,l,c,r):
+  """Loop over our repository and find all changed and missing files."""
   for left in dleft.keys():
     right=dright.get(left,None)
-    if right==None or mismatch('A',dleft[left],right):
-      # if either have the current file not in parent or the
-      # checksums differ: add it to changed files
+    if right==None:
+      # we have the file but our parent hasn't: add to left set
       l.append(left)
+    elif mismatch(dleft[left],right):
+      # we have it but checksums mismatch: add to center set
+      c.append(left)
   for right in dright.keys():
     left=dleft.get(right,None)
     if left==None:
-      # if we have a file in the parent but not our manifest,
-      # add it to deleted files; checksums are checked earlier
+      # if parent has file but we don't: add to right set
       r.append(right)
-  return l,r
+    # change is already handled when comparing child against parent
+  return l,c,r
 
 def get_filechanges(repo,revision,parents,mleft):
   """Given some repository and revision, find all changed/deleted files."""
-  l,r=[],[]
+  l,c,r=[],[],[]
   for p in parents:
     if p<0: continue
     mright=repo.changectx(p).manifest()
@@ -96,8 +98,8 @@ def get_filechanges(repo,revision,parents,mleft):
     dleft.sort()
     dright=mright.keys()
     dright.sort()
-    l,r=outer_set(mleft,mright,l,r)
-  return l,r
+    l,c,r=outer_set(mleft,mright,l,c,r)
+  return l,c,r
 
 def export_commit(ui,repo,revision,marks,heads,last,max,count):
   (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision)
@@ -153,12 +155,12 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
 
   ctx=repo.changectx(str(revision))
   man=ctx.manifest()
-  added,removed=get_filechanges(repo,revision,parents,man)
+  added,changed,removed=get_filechanges(repo,revision,parents,man)
 
-  sys.stderr.write('Exporting revision %d with %d changed/%d removed files\n' %
-      (revision,len(added),len(removed)))
+  sys.stderr.write('Exporting revision %d with %d/%d/%d added/changed/removed files\n' %
+      (revision,len(added),len(changed),len(removed)))
 
-  for a in added:
+  for a in added+changed:
     fctx=ctx.filectx(a)
     d=fctx.data()
     wr('M %s inline %s' % (gitmode(man.execf(a)),a))
