@@ -7,7 +7,7 @@
 Usage: hg2git.py <hg repo url> <marks file> <heads file> <tip file>
 """
 
-from mercurial import repo,hg,cmdutil,util,ui,revlog
+from mercurial import repo,hg,cmdutil,util,ui,revlog,node
 from tempfile import mkstemp
 import re
 import sys
@@ -61,20 +61,47 @@ def checkpoint(count):
   return count
 
 def get_parent_mark(parent,marks):
-  p=marks.get(str(parent),None)
-  if p==None:
-    # if we didn't see parent previously, assume we saw it in this run
-    p=':%d' % (parent+1)
-  return p
+  """Get the mark for some parent.
+  If we saw it in the current session, return :%d syntax and
+  otherwise the SHA1 from the cache."""
+  return marks.get(str(parent+1),':%d' % (parent+1))
+
+def mismatch(x,f1,f2):
+  """See if two revisions of a file are not equal."""
+  return node.hex(f1)!=node.hex(f2)
+
+def outer_set(dleft,dright,l,r):
+  """Loop over our repository in and find all changed and missing files."""
+  for left in dleft.keys():
+    right=dright.get(left,None)
+    if right==None or mismatch('A',dleft[left],right):
+      # if either have the current file not in parent or the
+      # checksums differ: add it to changed files
+      l.append(left)
+  for right in dright.keys():
+    left=dleft.get(right,None)
+    if left==None:
+      # if we have a file in the parent but not our manifest,
+      # add it to deleted files; checksums are checked earlier
+      r.append(right)
+  return l,r
+
+def get_filechanges(repo,revision,parents,mleft):
+  """Given some repository and revision, find all changed/deleted files."""
+  l,r=[],[]
+  for p in parents:
+    if p<0: continue
+    mright=repo.changectx(p).manifest()
+    dleft=mleft.keys()
+    dleft.sort()
+    dright=mright.keys()
+    dright.sort()
+    l,r=outer_set(mleft,mright,l,r)
+  return l,r
 
 def export_commit(ui,repo,revision,marks,heads,last,max,count):
-  sys.stderr.write('Exporting revision %d (tip %d) as [:%d]\n' % (revision,max,revision+1))
-
   (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision)
   parents=repo.changelog.parentrevs(revision)
-
-  # we need this later to write out tags
-  marks[str(revision)]=':%d'%(revision+1)
 
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
@@ -93,7 +120,7 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
     sys.stderr.write('Initializing branch [%s] to parent [%s]\n' %
         (branch,src))
     link=src # avoid making a merge commit for incremental import
-  elif not heads.has_key(branch) and revision>0:
+  elif link=='' and not heads.has_key(branch) and revision>0:
     # newly created branch and not the first one: connect to parent
     tmp=get_parent_mark(parents[0],marks)
     wr('from %s' % tmp)
@@ -111,8 +138,8 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
       if p==l or p==revision or p<0:
         continue
       tmp=get_parent_mark(p,marks)
-      # if we fork off a branch, don't merge via 'merge' as we have
-      # 'from' already above
+      # if we fork off a branch, don't merge with our parent via 'merge'
+      # as we have 'from' already above
       if tmp==link:
         continue
       sys.stderr.write('Merging branch [%s] with parent [%s] from [r%d]\n' %
@@ -121,26 +148,25 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
 
   last[branch]=revision
   heads[branch]=''
-
-  # just wipe the branch clean, all full manifest contents
-  wr('deleteall')
+  # we need this later to write out tags
+  marks[str(revision)]=':%d'%(revision+1)
 
   ctx=repo.changectx(str(revision))
   man=ctx.manifest()
+  added,removed=get_filechanges(repo,revision,parents,man)
 
-  #for f in man.keys():
-  #  fctx=ctx.filectx(f)
-  #  d=fctx.data()
-  #  wr('M %s inline %s' % (gitmode(man.execf(f)),f))
-  #  wr('data %d' % len(d)) # had some trouble with size()
-  #  wr(d)
+  sys.stderr.write('Exporting revision %d with %d changed/%d removed files\n' %
+      (revision,len(added),len(removed)))
 
-  for fctx in ctx.filectxs():
-    f=fctx.path()
+  for a in added:
+    fctx=ctx.filectx(a)
     d=fctx.data()
-    wr('M %s inline %s' % (gitmode(man.execf(f)),f))
+    wr('M %s inline %s' % (gitmode(man.execf(a)),a))
     wr('data %d' % len(d)) # had some trouble with size()
     wr(d)
+
+  for r in removed:
+    wr('D %s' % r)
 
   wr()
   return checkpoint(count)
@@ -153,8 +179,8 @@ def export_tags(ui,repo,cache,count):
     rev=repo.changelog.rev(node)
     ref=cache.get(str(rev),None)
     if ref==None:
-      sys.stderr.write('Failed to find reference for creating tag'
-          ' %s at r%d\n' % (tag,rev))
+      #sys.stderr.write('Failed to find reference for creating tag'
+      #    ' %s at r%d\n' % (tag,rev))
       continue
     (_,user,(time,timezone),_,desc,branch,_)=get_changeset(ui,repo,rev)
     sys.stderr.write('Exporting tag [%s] at [hg r%d] [git %s]\n' % (tag,rev,ref))
