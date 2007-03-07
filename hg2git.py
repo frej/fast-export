@@ -254,7 +254,7 @@ if __name__=='__main__':
   if _max<0:
     max=tip
 
-  c=int(state_cache.get('count',0))
+  c=0
   last={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,tip,c)
@@ -262,6 +262,5 @@ if __name__=='__main__':
   c=export_tags(ui,repo,marks_cache,c)
 
   state_cache['tip']=max
-  state_cache['count']=c
   state_cache['repo']=repourl
   save_cache(tipfile,state_cache)
