@@ -171,16 +171,19 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
   wr()
   return checkpoint(count)
 
-def export_tags(ui,repo,cache,count):
+def export_tags(ui,repo,marks_cache,start,end,count):
   l=repo.tagslist()
   for tag,node in l:
-    if tag=='tip':
-      continue
+    # ignore latest revision
+    if tag=='tip': continue
     rev=repo.changelog.rev(node)
-    ref=cache.get(str(rev),None)
+    # ignore those tags not in our import range
+    if rev<start or rev>=end: continue
+
+    ref=marks_cache.get(str(rev),None)
     if ref==None:
-      #sys.stderr.write('Failed to find reference for creating tag'
-      #    ' %s at r%d\n' % (tag,rev))
+      sys.stderr.write('Failed to find reference for creating tag'
+          ' %s at r%d\n' % (tag,rev))
       continue
     (_,user,(time,timezone),_,desc,branch,_)=get_changeset(ui,repo,rev)
     sys.stderr.write('Exporting tag [%s] at [hg r%d] [git %s]\n' % (tag,rev,ref))
@@ -259,7 +262,9 @@ if __name__=='__main__':
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,tip,c)
 
-  c=export_tags(ui,repo,marks_cache,c)
+  c=export_tags(ui,repo,marks_cache,min,max,c)
+
+  sys.stderr.write('Issued %d commands\n' % c)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
