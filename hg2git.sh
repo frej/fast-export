@@ -1,7 +1,5 @@
 #!/bin/sh
 
-USAGE='[-m max] [--quiet] repo'
-LONG_USAGE='Import hg repository <repo> up to either tip or <max>'
 ROOT="`dirname $0`"
 REPO=""
 MAX="-1"
@@ -10,6 +8,11 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
+
+USAGE="[-m <max>] [--quiet] [<repo>]"
+LONG_USAGE="Import hg repository <repo> up to either tip or <max>
+If <repo> is omitted, use last hg repository as obtained from state file,
+GIT_DIR/$PFX-$SFX_STATE by default."
 
 . git-sh-setup
 cd_to_toplevel
@@ -34,12 +37,20 @@ do
   shift
 done
 
-if [ "$#" != 1 ] ; then
-  usage
-  exit 1
+# for convenience: get default repo from state file
+if [ "$#" != 1 -a -f "$GIT_DIR/$PFX-$SFX_STATE" ] ; then
+  REPO="`egrep '^:repo ' "$GIT_DIR/$PFX-$SFX_STATE" | cut -d ' ' -f 2`"
+  echo "Using last hg repository \"$REPO\""
 fi
 
-REPO="$1"
+if [ x"$REPO" = x ] ; then
+  if [ "$#" != 1 ] ; then
+    usage
+    exit 1
+  else
+    REPO="$1"
+  fi
+fi
 
 # make sure we have a marks cache
 if [ ! -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
