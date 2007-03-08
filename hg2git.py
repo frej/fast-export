@@ -238,9 +238,7 @@ def verify_heads(ui,repo,cache):
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
   return True
 
-if __name__=='__main__':
-  if len(sys.argv)!=6: sys.exit(usage(1))
-  repourl,m,marksfile,headsfile,tipfile=sys.argv[1:]
+def hg2git(repourl,m,marksfile,headsfile,tipfile):
   _max=int(m)
 
   marks_cache=load_cache(marksfile)
@@ -250,7 +248,7 @@ if __name__=='__main__':
   ui,repo=setup_repo(repourl)
 
   if not verify_heads(ui,repo,heads_cache):
-    sys.exit(1)
+    return 1
 
   tip=repo.changelog.count()
 
@@ -271,3 +269,10 @@ if __name__=='__main__':
   state_cache['tip']=max
   state_cache['repo']=repourl
   save_cache(tipfile,state_cache)
+
+  return 0
+
+if __name__=='__main__':
+  if len(sys.argv)!=6: sys.exit(usage(1))
+  repourl,m,marksfile,headsfile,tipfile=sys.argv[1:]
+  sys.exit(hg2git(repourl,m,marksfile,headsfile,tipfile))
