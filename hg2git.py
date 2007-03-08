@@ -17,8 +17,8 @@ import os
 user_re=re.compile('[^<]+ <[^>]+>$')
 # git branch for hg's default 'HEAD' branch
 cfg_master='master'
-# insert 'checkpoint' command after this many commits
-cfg_checkpoint_count=1000
+# insert 'checkpoint' command after this many commits or none at all if 0
+cfg_checkpoint_count=0
 
 def usage(ret):
   sys.stderr.write(__doc__)
@@ -54,7 +54,7 @@ def wr(msg=''):
 
 def checkpoint(count):
   count=count+1
-  if count%cfg_checkpoint_count==0:
+  if cfg_checkpoint_count>0 and count%cfg_checkpoint_count==0:
     sys.stderr.write("Checkpoint after %d commits\n" % count)
     wr('checkpoint')
     wr()
