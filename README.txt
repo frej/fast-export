@@ -25,3 +25,12 @@ Notes
 As each git-fast-import run creates a new pack file, it may be required
 to repack the repository quite often for incremental imports (especially
 when importing a small number of changesets per incremental import).
+
+Design
+======
+
+hg2git.py was designed in a way that doesn't require a 2-pass mechanism
+or any prior repository analysis: if just feeds what it finds into
+git-fast-import. This also implies that it heavily relies on strictly
+linear ordering of changesets from hg, i.e. its append-only storage
+model so that changesets hg2git already saw never get modified.
