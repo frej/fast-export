@@ -43,3 +43,20 @@ repository. However, all forks of a hg repo can be imported into one git
 repo each and then merged together (e.g. as different branches in the
 final git repo) since the checksums are stable, i.e. one particular hg
 changeset always produces the same git SHA1 checksum.
+
+Todo
+====
+
+For incremental imports, handling tags needs to be reworked (maybe):
+Right now we assume that once a tag is created, it stays forever and
+never changes. However,
+
+  1) tags in hg may be removed
+  2) tags may change
+
+I'm not yet sure how to handle this and how this interferes with
+non-hg-based tags in git.
+
+The same for branches: They may get removed.
+
+For one-time conversions, everything is fine.
