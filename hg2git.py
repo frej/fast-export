@@ -28,12 +28,16 @@ def setup_repo(url):
   myui=ui.ui()
   return myui,hg.repository(myui,url)
 
-def get_changeset(ui,repo,revision):
+def get_changeset(ui,repo,revision,authors):
   def get_branch(name):
     if name=='HEAD':
       name=cfg_master
     return name
-  def fixup_user(user):
+  def fixup_user(user,authors):
+    if authors!=None:
+      # if we have an authors table, try to get mapping
+      # by defaultung to the current value of 'user'
+      user=authors.get(user,user)
     if user_re.match(user)==None:
       if '@' not in user:
         return user+' <none@none>'
@@ -43,7 +47,7 @@ def get_changeset(ui,repo,revision):
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
   tz="%+03d%02d" % (-timezone / 3600, ((-timezone % 3600) / 60))
   branch=get_branch(extra.get('branch','master'))
-  return (manifest,fixup_user(user),(time,tz),files,desc,branch,extra)
+  return (manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
 
 def gitmode(x):
   return x and '100755' or '100644'
@@ -101,8 +105,8 @@ def get_filechanges(repo,revision,parents,mleft):
     l,c,r=outer_set(mleft,mright,l,c,r)
   return l,c,r
 
-def export_commit(ui,repo,revision,marks,heads,last,max,count):
-  (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision)
+def export_commit(ui,repo,revision,marks,heads,last,max,count,authors):
+  (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
   parents=repo.changelog.parentrevs(revision)
 
   wr('commit refs/heads/%s' % branch)
@@ -173,7 +177,7 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count):
   wr()
   return checkpoint(count)
 
-def export_tags(ui,repo,marks_cache,start,end,count):
+def export_tags(ui,repo,marks_cache,start,end,count,authors):
   l=repo.tagslist()
   for tag,node in l:
     # ignore latest revision
@@ -187,7 +191,7 @@ def export_tags(ui,repo,marks_cache,start,end,count):
       sys.stderr.write('Failed to find reference for creating tag'
           ' %s at r%d\n' % (tag,rev))
       continue
-    (_,user,(time,timezone),_,desc,branch,_)=get_changeset(ui,repo,rev)
+    (_,user,(time,timezone),_,desc,branch,_)=get_changeset(ui,repo,rev,authors)
     sys.stderr.write('Exporting tag [%s] at [hg r%d] [git %s]\n' % (tag,rev,ref))
     wr('tag %s' % tag)
     wr('from %s' % ref)
@@ -238,7 +242,7 @@ def verify_heads(ui,repo,cache):
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
   return True
 
-def hg2git(repourl,m,marksfile,headsfile,tipfile):
+def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={}):
   _max=int(m)
 
   marks_cache=load_cache(marksfile)
@@ -260,9 +264,9 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile):
   c=0
   last={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,tip,c)
+    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,tip,c,authors)
 
-  c=export_tags(ui,repo,marks_cache,min,max,c)
+  c=export_tags(ui,repo,marks_cache,min,max,c,authors)
 
   sys.stderr.write('Issued %d commands\n' % c)
 
