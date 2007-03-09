@@ -13,8 +13,12 @@ import re
 import sys
 import os
 
+# silly regex to catch Signed-off-by lines in log message
+sob_re=re.compile('^Signed-[Oo]ff-[Bb]y: (.+)$')
 # silly regex to see if user field has email address
-user_re=re.compile('[^<]+ <[^>]+>$')
+user_re=re.compile('([^<]+) (<[^>]+>)$')
+# silly regex to clean out user names
+user_clean_re=re.compile('^["]([^"]+)["]$')
 # git branch for hg's default 'HEAD' branch
 cfg_master='master'
 # insert 'checkpoint' command after this many commits or none at all if 0
@@ -28,21 +32,36 @@ def setup_repo(url):
   myui=ui.ui()
   return myui,hg.repository(myui,url)
 
+def fixup_user(user,authors):
+  if authors!=None:
+    # if we have an authors table, try to get mapping
+    # by defaulting to the current value of 'user'
+    user=authors.get(user,user)
+  name,mail,m='','',user_re.match(user)
+  if m==None:
+    # if we don't have 'Name <mail>' syntax, use 'user
+    # <devnull@localhost>' if use contains no at and
+    # 'user <user>' otherwise
+    name=user
+    if '@' not in user:
+      mail='<devnull@localhost>'
+    else:
+      mail='<%s>' % user
+  else:
+    # if we have 'Name <mail>' syntax, everything is fine :)
+    name,mail=m.group(1),m.group(2)
+
+  # remove any silly quoting from username
+  m2=user_clean_re.match(name)
+  if m2!=None:
+    name=m2.group(1)
+  return '%s %s' % (name,mail)
+
 def get_changeset(ui,repo,revision,authors):
   def get_branch(name):
     if name=='HEAD':
       name=cfg_master
     return name
-  def fixup_user(user,authors):
-    if authors!=None:
-      # if we have an authors table, try to get mapping
-      # by defaultung to the current value of 'user'
-      user=authors.get(user,user)
-    if user_re.match(user)==None:
-      if '@' not in user:
-        return user+' <none@none>'
-      return user+' <'+user+'>'
-    return user
   node=repo.lookup(revision)
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
   tz="%+03d%02d" % (-timezone / 3600, ((-timezone % 3600) / 60))
@@ -105,12 +124,50 @@ def get_filechanges(repo,revision,parents,mleft):
     l,c,r=outer_set(mleft,mright,l,c,r)
   return l,c,r
 
+def get_author(logmessage,committer,authors):
+  """As git distincts between author and committer of a patch, try to
+  extract author by detecting Signed-off-by lines.
+
+  This walks from the end of the log message towards the top skipping
+  empty lines. Upon the first non-empty line, it walks all Signed-off-by
+  lines upwards to find the first one. For that (if found), it extracts
+  authorship information the usual way (authors table, cleaning, etc.)
+
+  If no Signed-off-by line is found, this defaults to the committer.
+
+  This may sound stupid (and it somehow is), but in log messages we
+  accidentially may have lines in the middle starting with
+  "Signed-off-by: foo" and thus matching our detection regex. Prevent
+  that."""
+
+  loglines=logmessage.split('\n')
+  i=len(loglines)
+  # from tail walk to top skipping empty lines
+  while i>=0:
+    i-=1
+    if len(loglines[i].strip())==0: continue
+    break
+  if i>=0:
+    # walk further upwards to find first sob line, store in 'first'
+    first=None
+    while i>=0:
+      m=sob_re.match(loglines[i])
+      if m==None: break
+      first=m
+      i-=1
+    # if the last non-empty line matches our Signed-Off-by regex: extract username
+    if first!=None:
+      r=fixup_user(first.group(1),authors)
+      return r
+  return committer
+
 def export_commit(ui,repo,revision,marks,heads,last,max,count,authors):
   (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
   parents=repo.changelog.parentrevs(revision)
 
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
+  wr('author %s %d %s' % (get_author(desc,user,authors),time,timezone))
   wr('committer %s %d %s' % (user,time,timezone))
   wr('data %d' % (len(desc)+1)) # wtf?
   wr(desc)
