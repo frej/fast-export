@@ -57,11 +57,12 @@ def fixup_user(user,authors):
     name=m2.group(1)
   return '%s %s' % (name,mail)
 
+def get_branch(name):
+  if name=='HEAD':
+    name=cfg_master
+  return name
+
 def get_changeset(ui,repo,revision,authors):
-  def get_branch(name):
-    if name=='HEAD':
-      name=cfg_master
-    return name
   node=repo.lookup(revision)
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
   tz="%+03d%02d" % (-timezone / 3600, ((-timezone % 3600) / 60))
@@ -290,7 +291,13 @@ def verify_heads(ui,repo,cache):
     f.close()
     return sha1
 
-  for b in cache.keys():
+  # get list of hg's branches to verify, don't take all git has
+  branches=repo.branchtags()
+  l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
+  l.sort()
+
+  for _,_,b in l:
+    b=get_branch(b)
     sys.stderr.write('Verifying branch [%s]\n' % b)
     sha1=getsha1(b)
     c=cache.get(b)
