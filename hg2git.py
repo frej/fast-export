@@ -307,10 +307,13 @@ def save_cache(filename,cache):
 
 def verify_heads(ui,repo,cache):
   def getsha1(branch):
-    f=open(os.getenv('GIT_DIR','/dev/null')+'/refs/heads/'+branch)
-    sha1=f.readlines()[0].split('\n')[0]
-    f.close()
-    return sha1
+    try:
+      f=open(os.getenv('GIT_DIR','/dev/null')+'/refs/heads/'+branch)
+      sha1=f.readlines()[0].split('\n')[0]
+      f.close()
+      return sha1
+    except IOError:
+      return None
 
   # get list of hg's branches to verify, don't take all git has
   branches=repo.branchtags()
