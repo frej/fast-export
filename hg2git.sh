@@ -8,10 +8,12 @@ SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
 
-USAGE="[-m <max>] [--quiet] [-s] [-A <file>] [-r <repo>]"
+USAGE="[--quiet] [-r <repo>] [-m <max>] [-s] [-A <file>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
+
+Note: The argument order matters.
 
 Options:
 	-m	Maximum revision to import
