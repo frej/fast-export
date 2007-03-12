@@ -35,15 +35,6 @@ git-fast-import. This also implies that it heavily relies on strictly
 linear ordering of changesets from hg, i.e. its append-only storage
 model so that changesets hg2git already saw never get modified.
 
-Import and SHA stability
-========================
-
-Currently it's only supported to map one hg repository to one git
-repository. However, all forks of a hg repo can be imported into one git
-repo each and then merged together (e.g. as different branches in the
-final git repo) since the checksums are stable, i.e. one particular hg
-changeset always produces the same git SHA1 checksum.
-
 Todo
 ====
 
