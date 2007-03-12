@@ -270,7 +270,7 @@ def load_authors(filename):
     return cache
   f=open(filename,'r')
   l=0
-  lre=re.compile('^([^= ]+)[ ]*=[ ]*(.+)$')
+  lre=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
   for line in f.readlines():
     l+=1
     m=lre.match(line)
