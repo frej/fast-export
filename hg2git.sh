@@ -2,7 +2,6 @@
 
 ROOT="`dirname $0`"
 REPO=""
-MAX="-1"
 PFX="hg2git"
 SFX_MARKS="marks"
 SFX_HEADS="heads"
@@ -20,15 +19,16 @@ cd_to_toplevel
 while case "$#" in 0) break ;; esac
 do
   case "$1" in
-    -m)
+    -r|--r|--re|--rep|--repo)
       shift
-      MAX="$1"
+      REPO="$1"
       ;;
     --q|--qu|--qui|--quie|--quiet)
       QUIET="--quiet"
       ;;
     -*)
-      usage
+      # pass any other options down to hg2git.py
+      break
       ;;
     *)
       break
@@ -38,18 +38,9 @@ do
 done
 
 # for convenience: get default repo from state file
-if [ "$#" != 1 -a -f "$GIT_DIR/$PFX-$SFX_STATE" ] ; then
+if [ x"$REPO" = x -a -f "$GIT_DIR/$PFX-$SFX_STATE" ] ; then
   REPO="`egrep '^:repo ' "$GIT_DIR/$PFX-$SFX_STATE" | cut -d ' ' -f 2`"
   echo "Using last hg repository \"$REPO\""
-fi
-
-if [ x"$REPO" = x ] ; then
-  if [ "$#" != 1 ] ; then
-    usage
-    exit 1
-  else
-    REPO="$1"
-  fi
 fi
 
 # make sure we have a marks cache
@@ -58,11 +49,11 @@ if [ ! -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
 fi
 
 GIT_DIR="$GIT_DIR" python "$ROOT/hg2git.py" \
-  "$REPO" \
-  "$MAX" \
-  "$GIT_DIR/$PFX-$SFX_MARKS" \
-  "$GIT_DIR/$PFX-$SFX_HEADS" \
-  "$GIT_DIR/$PFX-$SFX_STATE" \
+  --repo "$REPO" \
+  --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
+  --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
+  --status "$GIT_DIR/$PFX-$SFX_STATE" \
+  "$@" \
 | git-fast-import $QUIET --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
 || die 'Git fast-import failed'
 

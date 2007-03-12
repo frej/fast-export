@@ -9,6 +9,7 @@ Usage: hg2git.py <hg repo url> <marks file> <heads file> <tip file>
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
 from tempfile import mkstemp
+from optparse import OptionParser
 import re
 import sys
 import os
@@ -322,7 +323,7 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={}):
 
   min=int(state_cache.get('tip',0))
   max=_max
-  if _max<0:
+  if _max<=0:
     max=tip
 
   c=0
@@ -341,6 +342,33 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={}):
   return 0
 
 if __name__=='__main__':
-  if len(sys.argv)!=6: sys.exit(usage(1))
-  repourl,m,marksfile,headsfile,tipfile=sys.argv[1:]
-  sys.exit(hg2git(repourl,m,marksfile,headsfile,tipfile))
+  def bail(parser,opt):
+    sys.stderr.write('Error: No %s option given\n' % opt)
+    parser.print_help()
+    sys.exit(2)
+
+  parser=OptionParser()
+
+  parser.add_option("-m","--max",type="int",dest="max",
+      help="Maximum hg revision to import")
+  parser.add_option("--marks",dest="marksfile",
+      help="File to read git-fast-import's marks from")
+  parser.add_option("--heads",dest="headsfile",
+      help="File to read last run's git heads from")
+  parser.add_option("--status",dest="statusfile",
+      help="File to read status from")
+  parser.add_option("-r","--repo",dest="repourl",
+      help="URL of repo to import")
+
+  (options,args)=parser.parse_args()
+
+  m=0
+  if options.max!=None: m=options.max
+
+  if options.marksfile==None: bail(parser,'--marks')
+  if options.marksfile==None: bail(parser,'--heads')
+  if options.marksfile==None: bail(parser,'--status')
+  if options.marksfile==None: bail(parser,'--repo')
+
+  sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
+    options.headsfile))
