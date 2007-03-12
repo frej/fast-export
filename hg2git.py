@@ -163,13 +163,14 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_commit(ui,repo,revision,marks,heads,last,max,count,authors):
+def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
   (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
   parents=repo.changelog.parentrevs(revision)
 
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
-  wr('author %s %d %s' % (get_author(desc,user,authors),time,timezone))
+  if sob:
+    wr('author %s %d %s' % (get_author(desc,user,authors),time,timezone))
   wr('committer %s %d %s' % (user,time,timezone))
   wr('data %d' % (len(desc)+1)) # wtf?
   wr(desc)
@@ -220,8 +221,8 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors):
   man=ctx.manifest()
   added,changed,removed=get_filechanges(repo,revision,parents,man)
 
-  sys.stderr.write('Exporting revision %d with %d/%d/%d added/changed/removed files\n' %
-      (revision,len(added),len(changed),len(removed)))
+  sys.stderr.write('Exporting revision %d/%d with %d/%d/%d added/changed/removed files\n' %
+      (revision,max,len(added),len(changed),len(removed)))
 
   for a in added+changed:
     fctx=ctx.filectx(a)
@@ -307,7 +308,7 @@ def verify_heads(ui,repo,cache):
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
   return True
 
-def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={}):
+def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False):
   _max=int(m)
 
   marks_cache=load_cache(marksfile)
@@ -323,13 +324,13 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={}):
 
   min=int(state_cache.get('tip',0))
   max=_max
-  if _max<=0:
+  if _max<0:
     max=tip
 
   c=0
   last={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,tip,c,authors)
+    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,tip,c,authors,sob)
 
   c=export_tags(ui,repo,marks_cache,min,max,c,authors)
 
@@ -359,10 +360,12 @@ if __name__=='__main__':
       help="File to read status from")
   parser.add_option("-r","--repo",dest="repourl",
       help="URL of repo to import")
+  parser.add_option("-s",action="store_true",dest="sob",
+      default=False,help="Enable parsing Signed-off-by lines")
 
   (options,args)=parser.parse_args()
 
-  m=0
+  m=-1
   if options.max!=None: m=options.max
 
   if options.marksfile==None: bail(parser,'--marks')
@@ -371,4 +374,4 @@ if __name__=='__main__':
   if options.marksfile==None: bail(parser,'--repo')
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
-    options.headsfile))
+    options.headsfile,sob=options.sob))
