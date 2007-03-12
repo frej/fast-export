@@ -278,7 +278,7 @@ def load_authors(filename):
       sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
       continue
     # put key:value in cache, key without ^:
-    cache[m.group(1)]=m.group(2)
+    cache[m.group(1).strip()]=m.group(2).strip()
   f.close()
   sys.stderr.write('Loaded %d authors\n' % l)
   return cache
