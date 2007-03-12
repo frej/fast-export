@@ -374,4 +374,4 @@ if __name__=='__main__':
   if options.marksfile==None: bail(parser,'--repo')
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
-    options.headsfile,sob=options.sob))
+    options.statusfile,sob=options.sob))
