@@ -264,6 +264,25 @@ def export_tags(ui,repo,marks_cache,start,end,count,authors):
     count=checkpoint(count)
   return count
 
+def load_authors(filename):
+  cache={}
+  if not os.path.exists(filename):
+    return cache
+  f=open(filename,'r')
+  l=0
+  lre=re.compile('^([^= ]+)[ ]*=[ ]*(.+)$')
+  for line in f.readlines():
+    l+=1
+    m=lre.match(line)
+    if m==None:
+      sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
+      continue
+    # put key:value in cache, key without ^:
+    cache[m.group(1)]=m.group(2)
+  f.close()
+  sys.stderr.write('Loaded %d authors\n' % l)
+  return cache
+
 def load_cache(filename):
   cache={}
   if not os.path.exists(filename):
@@ -362,6 +381,8 @@ if __name__=='__main__':
       help="URL of repo to import")
   parser.add_option("-s",action="store_true",dest="sob",
       default=False,help="Enable parsing Signed-off-by lines")
+  parser.add_option("-A","--authors",dest="authorfile",
+      help="Read authormap from AUTHORFILE")
 
   (options,args)=parser.parse_args()
 
@@ -373,5 +394,9 @@ if __name__=='__main__':
   if options.marksfile==None: bail(parser,'--status')
   if options.marksfile==None: bail(parser,'--repo')
 
+  a={}
+  if options.authorfile!=None:
+    a=load_authors(options.authorfile)
+
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
-    options.statusfile,sob=options.sob))
+    options.statusfile,authors=a,sob=options.sob))
