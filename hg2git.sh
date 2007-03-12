@@ -8,10 +8,19 @@ SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
 
-USAGE="[-m <max>] [--quiet] [<repo>]"
+USAGE="[-m <max>] [--quiet] [-s] [-A <file>] [-r <repo>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
-GIT_DIR/$PFX-$SFX_STATE by default."
+GIT_DIR/$PFX-$SFX_STATE by default.
+
+Options:
+	-m	Maximum revision to import
+	--quiet	Passed to git-fast-import(1)
+	-s	Enable parsing Signed-off-by lines
+	-A	Read author map from file
+		(Same as in git-svnimport(1) and git-cvsimport(1))
+	-r	Mercurial repository to import
+"
 
 . git-sh-setup
 cd_to_toplevel
