@@ -330,7 +330,7 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False):
   c=0
   last={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,tip,c,authors,sob)
+    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,max,c,authors,sob)
 
   c=export_tags(ui,repo,marks_cache,min,max,c,authors)
 
