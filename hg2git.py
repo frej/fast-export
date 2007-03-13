@@ -24,6 +24,8 @@ user_clean_re=re.compile('^["]([^"]+)["]$')
 cfg_master='master'
 # insert 'checkpoint' command after this many commits or none at all if 0
 cfg_checkpoint_count=0
+# write some progress message every this many file contents written
+cfg_export_boundary=1000
 
 def usage(ret):
   sys.stderr.write(__doc__)
@@ -163,6 +165,21 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
+def export_file_contents(ctx,manifest,files):
+  count=0
+  max=len(files)
+  for file in files:
+    fctx=ctx.filectx(file)
+    d=fctx.data()
+    wr('M %s inline %s' % (gitmode(manifest.execf(file)),file))
+    wr('data %d' % len(d)) # had some trouble with size()
+    wr(d)
+    count+=1
+    if count%cfg_export_boundary==0:
+      sys.stderr.write('Exported %d/%d files\n' % (count,max))
+  if max>cfg_export_boundary:
+    sys.stderr.write('Exported %d/%d files\n' % (count,max))
+
 def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
   (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
   parents=repo.changelog.parentrevs(revision)
@@ -219,20 +236,20 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
 
   ctx=repo.changectx(str(revision))
   man=ctx.manifest()
-  added,changed,removed=get_filechanges(repo,revision,parents,man)
 
-  sys.stderr.write('Exporting revision %d/%d with %d/%d/%d added/changed/removed files\n' %
-      (revision,max,len(added),len(changed),len(removed)))
-
-  for a in added+changed:
-    fctx=ctx.filectx(a)
-    d=fctx.data()
-    wr('M %s inline %s' % (gitmode(man.execf(a)),a))
-    wr('data %d' % len(d)) # had some trouble with size()
-    wr(d)
-
-  for r in removed:
-    wr('D %s' % r)
+  if revision==0:
+    # first revision: feed in full manifest
+    sys.stderr.write('Exporting full revision %d/%d with %d added files\n' %
+        (revision,max,len(man.keys())))
+    export_file_contents(ctx,man,man.keys())
+  else:
+    # later revision: feed in changed manifest
+    added,changed,removed=get_filechanges(repo,revision,parents,man)
+    sys.stderr.write('Exporting delta revision %d/%d with %d/%d/%d added/changed/removed files\n' %
+        (revision,max,len(added),len(changed),len(removed)))
+    export_file_contents(ctx,man,added+changed)
+    for r in removed:
+      wr('D %s' % r)
 
   wr()
   return checkpoint(count)
