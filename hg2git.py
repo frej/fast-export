@@ -65,7 +65,7 @@ def get_branch(name):
     name=cfg_master
   return name
 
-def get_changeset(ui,repo,revision,authors):
+def get_changeset(ui,repo,revision,authors={}):
   node=repo.lookup(revision)
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
   tz="%+03d%02d" % (-timezone / 3600, ((-timezone % 3600) / 60))
@@ -332,19 +332,31 @@ def verify_heads(ui,repo,cache):
     except IOError:
       return None
 
-  # get list of hg's branches to verify, don't take all git has
   branches=repo.branchtags()
   l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
   l.sort()
 
+  # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
     b=get_branch(b)
     sys.stderr.write('Verifying branch [%s]\n' % b)
     sha1=getsha1(b)
     c=cache.get(b)
     if sha1!=c:
-      sys.stderr.write('Warning: Branch [%s] modified outside hg2git:'
+      sys.stderr.write('Error: Branch [%s] modified outside hg2git:'
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
+      return False
+
+  # verify that branch has exactly one head
+  t={}
+  for h in repo.heads():
+    (_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
+    if t.get(branch,False):
+      sys.stderr.write('Error: repository has at least one unnamed head: hg r%s\n' %
+          repo.changelog.rev(h))
+      return False
+    t[branch]=True
+
   return True
 
 def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False):
