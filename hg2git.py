@@ -77,7 +77,7 @@ def gitmode(x):
 
 def wr(msg=''):
   print msg
-  #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
+  map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
 def checkpoint(count):
   count=count+1

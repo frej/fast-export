@@ -15,12 +15,16 @@ Using it is quite simple for a mercurial repository <repo>:
   mkdir repo-git # or whatever
   cd repo-git
   git init
-  hg2git.sh <repo>
+  hg2git.sh -r <repo>
 
 Incremental imports to track hg repos is supported, too.
 
-Notes
-=====
+Notes/Limitations
+=================
+
+hg2git supports multiple branches but only named branches with exaclty
+one head each. Otherwise commits to the tip of these heads within branch
+will get flattened into merge commits.
 
 As each git-fast-import run creates a new pack file, it may be required
 to repack the repository quite often for incremental imports (especially
