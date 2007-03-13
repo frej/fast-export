@@ -77,7 +77,7 @@ def gitmode(x):
 
 def wr(msg=''):
   print msg
-  map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
+  #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
 def checkpoint(count):
   count=count+1
@@ -240,13 +240,13 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
   if revision==0:
     # first revision: feed in full manifest
     sys.stderr.write('Exporting full revision %d/%d with %d added files\n' %
-        (revision,max,len(man.keys())))
+        (revision+1,max,len(man.keys())))
     export_file_contents(ctx,man,man.keys())
   else:
     # later revision: feed in changed manifest
     added,changed,removed=get_filechanges(repo,revision,parents,man)
     sys.stderr.write('Exporting delta revision %d/%d with %d/%d/%d added/changed/removed files\n' %
-        (revision,max,len(added),len(changed),len(removed)))
+        (revision+1,max,len(added),len(changed),len(removed)))
     export_file_contents(ctx,man,added+changed)
     for r in removed:
       wr('D %s' % r)
@@ -322,7 +322,7 @@ def save_cache(filename,cache):
   map(lambda x: f.write(':%s %s\n' % (str(x),str(cache.get(x)))),cache.keys())
   f.close()
 
-def verify_heads(ui,repo,cache):
+def verify_heads(ui,repo,cache,force):
   def getsha1(branch):
     try:
       f=open(os.getenv('GIT_DIR','/dev/null')+'/refs/heads/'+branch)
@@ -345,7 +345,7 @@ def verify_heads(ui,repo,cache):
     if sha1!=c:
       sys.stderr.write('Error: Branch [%s] modified outside hg2git:'
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
-      return False
+      if not force: return False
 
   # verify that branch has exactly one head
   t={}
@@ -354,12 +354,12 @@ def verify_heads(ui,repo,cache):
     if t.get(branch,False):
       sys.stderr.write('Error: repository has at least one unnamed head: hg r%s\n' %
           repo.changelog.rev(h))
-      return False
+      if not force: return False
     t[branch]=True
 
   return True
 
-def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False):
+def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=False):
   _max=int(m)
 
   marks_cache=load_cache(marksfile)
@@ -368,7 +368,7 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False):
 
   ui,repo=setup_repo(repourl)
 
-  if not verify_heads(ui,repo,heads_cache):
+  if not verify_heads(ui,repo,heads_cache,force):
     return 1
 
   tip=repo.changelog.count()
@@ -415,6 +415,8 @@ if __name__=='__main__':
       default=False,help="Enable parsing Signed-off-by lines")
   parser.add_option("-A","--authors",dest="authorfile",
       help="Read authormap from AUTHORFILE")
+  parser.add_option("-f","--force",action="store_true",dest="force",
+      default=False,help="Ignore validation errors by force")
 
   (options,args)=parser.parse_args()
 
@@ -431,4 +433,4 @@ if __name__=='__main__':
     a=load_authors(options.authorfile)
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
-    options.statusfile,authors=a,sob=options.sob))
+    options.statusfile,authors=a,sob=options.sob,force=options.force))
