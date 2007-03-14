@@ -62,7 +62,7 @@ if [ ! -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
   touch "$GIT_DIR/$PFX-$SFX_MARKS"
 fi
 
-GIT_DIR="$GIT_DIR" python "$ROOT/hg2git.py" \
+GIT_DIR="$GIT_DIR" python "$ROOT/hg-fast-export.py" \
   --repo "$REPO" \
   --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
