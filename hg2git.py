@@ -352,9 +352,10 @@ def verify_heads(ui,repo,cache,force):
   # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
     b=get_branch(b)
-    sys.stderr.write('Verifying branch [%s]\n' % b)
     sha1=getsha1(b)
     c=cache.get(b)
+    if sha1!=None and c!=None:
+      sys.stderr.write('Verifying branch [%s]\n' % b)
     if sha1!=c:
       sys.stderr.write('Error: Branch [%s] modified outside hg2git:'
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
