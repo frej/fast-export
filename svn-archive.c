@@ -25,6 +25,7 @@
 
 #include <svn_types.h>
 #include <svn_pools.h>
+#include <svn_repos.h>
 #include <svn_fs.h>
 
 #undef SVN_ERR
@@ -175,13 +176,16 @@ int crawl_filesystem(char *repos_path, char *root_path, apr_pool_t *pool)
     apr_hash_t           *props;
     apr_hash_index_t     *i;
 
+    svn_repos_t          *repos;
     svn_fs_t             *fs;
     svn_string_t         *svndate;
     svn_revnum_t         youngest_rev, export_rev;
     svn_fs_root_t        *fs_root;
 
     SVN_ERR(svn_fs_initialize(pool));
-    SVN_ERR(svn_fs_open(&fs, repos_path, NULL, pool));
+    SVN_ERR(svn_repos_open(&repos, repos_path, pool));
+    if ((fs = svn_repos_fs(repos)) == NULL)
+      return -1;
     SVN_ERR(svn_fs_youngest_rev(&youngest_rev, fs, pool));
 
     export_rev = youngest_rev;
