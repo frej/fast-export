@@ -23,6 +23,7 @@
 #include <apr_general.h>
 
 #include <svn_fs.h>
+#include <svn_repos.h>
 #include <svn_pools.h>
 #include <svn_types.h>
 
@@ -141,12 +142,15 @@ int crawl_revisions(char *repos_path)
 {
     apr_pool_t   *pool, *subpool;
     svn_fs_t     *fs;
+    svn_repos_t  *repos;
     svn_revnum_t youngest_rev, min_rev, max_rev, rev;
 
     pool = svn_pool_create(NULL);
 
     SVN_ERR(svn_fs_initialize(pool));
-    SVN_ERR(svn_fs_open(&fs, repos_path, NULL, pool));
+    SVN_ERR(svn_repos_open(&repos, repos_path, pool));
+    if ((fs = svn_repos_fs(repos)) == NULL)
+        return -1;
     SVN_ERR(svn_fs_youngest_rev(&youngest_rev, fs, pool));
 
     min_rev = 1;
