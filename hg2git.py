@@ -70,7 +70,7 @@ def get_changeset(ui,repo,revision,authors={}):
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
   tz="%+03d%02d" % (-timezone / 3600, ((-timezone % 3600) / 60))
   branch=get_branch(extra.get('branch','master'))
-  return (manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
+  return (node,manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
 
 def gitmode(x):
   return x and '100755' or '100644'
@@ -167,6 +167,7 @@ def get_author(logmessage,committer,authors):
 
 def export_file_contents(ctx,manifest,files):
   count=0
+  files.sort()
   max=len(files)
   for file in files:
     fctx=ctx.filectx(file)
@@ -180,8 +181,15 @@ def export_file_contents(ctx,manifest,files):
   if max>cfg_export_boundary:
     sys.stderr.write('Exported %d/%d files\n' % (count,max))
 
+def is_merge(parents):
+  c=0
+  for parent in parents:
+    if parent>=0:
+      c+=1
+  return c>1
+
 def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
-  (_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
+  (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
   parents=repo.changelog.parentrevs(revision)
 
   wr('commit refs/heads/%s' % branch)
@@ -236,22 +244,33 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
 
   ctx=repo.changectx(str(revision))
   man=ctx.manifest()
+  added,changed,removed,type=[],[],[],''
 
   if revision==0:
     # first revision: feed in full manifest
-    sys.stderr.write('Exporting full revision %d/%d with %d added files\n' %
-        (revision+1,max,len(man.keys())))
-    export_file_contents(ctx,man,man.keys())
-  else:
-    # later revision: feed in changed manifest
+    added=man.keys()
+    type='full'
+  elif is_merge(parents):
+    # later merge revision: feed in changed manifest
+    # for many files comparing checksums is expensive so only do it for
+    # merges where we really need it due to hg's revlog logic
     added,changed,removed=get_filechanges(repo,revision,parents,man)
-    sys.stderr.write('Exporting delta revision %d/%d with %d/%d/%d added/changed/removed files\n' %
-        (revision+1,max,len(added),len(changed),len(removed)))
-    export_file_contents(ctx,man,added+changed)
-    for r in removed:
-      wr('D %s' % r)
+    type='thorough delta'
+  else:
+    # later non-merge revision: feed in changed manifest
+    # if we have exactly one parent, just take the changes from the
+    # manifest without expensively comparing checksums
+    f=repo.status(repo.lookup(parents[0]),revnode)[:3]
+    added,changed,removed=f[1],f[0],f[2]
+    type='simple delta'
 
+  sys.stderr.write('Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
+      (type,revision+1,max,len(added),len(changed),len(removed)))
+
+  map(lambda r: wr('D %s' % r),removed)
+  export_file_contents(ctx,man,added+changed)
   wr()
+
   return checkpoint(count)
 
 def export_tags(ui,repo,marks_cache,start,end,count,authors):
@@ -344,7 +363,7 @@ def verify_heads(ui,repo,cache,force):
   # verify that branch has exactly one head
   t={}
   for h in repo.heads():
-    (_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
+    (_,_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
     if t.get(branch,False):
       sys.stderr.write('Error: repository has at least one unnamed head: hg r%s\n' %
           repo.changelog.rev(h))
