@@ -263,20 +263,14 @@ def export_tags(ui,repo,marks_cache,start,end,count,authors):
     # ignore those tags not in our import range
     if rev<start or rev>=end: continue
 
-    ref=marks_cache.get(str(rev),None)
+    ref=get_parent_mark(rev,marks_cache)
     if ref==None:
       sys.stderr.write('Failed to find reference for creating tag'
           ' %s at r%d\n' % (tag,rev))
       continue
-    (_,user,(time,timezone),_,desc,branch,_)=get_changeset(ui,repo,rev,authors)
     sys.stderr.write('Exporting tag [%s] at [hg r%d] [git %s]\n' % (tag,rev,ref))
-    wr('tag %s' % tag)
+    wr('reset refs/tags/%s' % tag)
     wr('from %s' % ref)
-    wr('tagger %s %d %s' % (user,time,timezone))
-    msg='hg2git created tag %s for hg revision %d on branch %s on (summary):\n\t%s' % (tag,
-        rev,branch,desc.split('\n')[0])
-    wr('data %d' % (len(msg)+1))
-    wr(msg)
     wr()
     count=checkpoint(count)
   return count
