@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 # Copyright (c) 2007 Rocco Rutte <pdmef@gmx.net>
-# License: GPLv2
+# License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-"""hg2git.py - A mercurial-to-git filter for git-fast-import(1)
-Usage: hg2git.py <hg repo url> <marks file> <heads file> <tip file>
+"""hg-fast-export.py - A mercurial-to-git filter for git-fast-import(1)
+Usage: hg-fast-export.py <hg repo url> <marks file> <heads file> <tip file>
 """
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
@@ -357,7 +357,7 @@ def verify_heads(ui,repo,cache,force):
     if sha1!=None and c!=None:
       sys.stderr.write('Verifying branch [%s]\n' % b)
     if sha1!=c:
-      sys.stderr.write('Error: Branch [%s] modified outside hg2git:'
+      sys.stderr.write('Error: Branch [%s] modified outside hg-fast-export:'
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
       if not force: return False
 

@@ -3,7 +3,7 @@ hg2git.(sh|py) - mercurial to git converter using git-fast-import
 Legal
 =====
 
-The scripts are licensed under the GPL version 2 and were written by
+The scripts are licensed under the MIT license[0] and were written by
 Rocco Rutte <pdmef@gmx.net> with hints and help from the git list and
 #mercurial on freenode.
 
@@ -55,3 +55,8 @@ non-hg-based tags in git.
 The same for branches: They may get removed.
 
 For one-time conversions, everything is fine.
+
+Footnotes
+=========
+
+[0] http://www.opensource.org/licenses/mit-license.php

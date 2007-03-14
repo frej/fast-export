@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Copyright (c) 2007 Rocco Rutte <pdmef@gmx.net>
+# License: MIT <http://www.opensource.org/licenses/mit-license.php>
+
 ROOT="`dirname $0`"
 REPO=""
 PFX="hg2git"
