@@ -3,10 +3,6 @@
 # Copyright (c) 2007 Rocco Rutte <pdmef@gmx.net>
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-"""hg-fast-export.py - A mercurial-to-git filter for git-fast-import(1)
-Usage: hg-fast-export.py <hg repo url> <marks file> <heads file> <tip file>
-"""
-
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
 from tempfile import mkstemp
 from optparse import OptionParser
@@ -26,10 +22,6 @@ cfg_master='master'
 cfg_checkpoint_count=0
 # write some progress message every this many file contents written
 cfg_export_boundary=1000
-
-def usage(ret):
-  sys.stderr.write(__doc__)
-  return ret
 
 def setup_repo(url):
   myui=ui.ui()
