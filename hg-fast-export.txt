@@ -1,4 +1,4 @@
-hg2git.(sh|py) - mercurial to git converter using git-fast-import
+hg-fast-import.(sh|py) - mercurial to git converter using git-fast-import
 
 Legal
 =====
@@ -15,14 +15,14 @@ Using it is quite simple for a mercurial repository <repo>:
   mkdir repo-git # or whatever
   cd repo-git
   git init
-  hg2git.sh -r <repo>
+  hg-fast-import.sh -r <repo>
 
 Incremental imports to track hg repos is supported, too.
 
 Notes/Limitations
 =================
 
-hg2git supports multiple branches but only named branches with exaclty
+hg-fast-import supports multiple branches but only named branches with exaclty
 one head each. Otherwise commits to the tip of these heads within branch
 will get flattened into merge commits.
 
@@ -33,11 +33,11 @@ when importing a small number of changesets per incremental import).
 Design
 ======
 
-hg2git.py was designed in a way that doesn't require a 2-pass mechanism
+hg-fast-import.py was designed in a way that doesn't require a 2-pass mechanism
 or any prior repository analysis: if just feeds what it finds into
 git-fast-import. This also implies that it heavily relies on strictly
 linear ordering of changesets from hg, i.e. its append-only storage
-model so that changesets hg2git already saw never get modified.
+model so that changesets hg-fast-import already saw never get modified.
 
 Todo
 ====
