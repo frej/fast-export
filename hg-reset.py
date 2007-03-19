@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Copyright (c) 2007 Rocco Rutte <pdmef@gmx.net>
-# License: MIT <http://www.opensource.org/licenses/mit-license.php>
+# License: GPLv2
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
 from hg2git import setup_repo,load_cache,get_changeset
@@ -9,6 +9,9 @@ from optparse import OptionParser
 import sys
 
 def heads(ui,repo,start=None,stop=None,max=None):
+  # this is copied from mercurial/revlog.py and differs only in
+  # accepting a max argument for xrange(startrev+1,...) defaulting
+  # to the original repo.changelog.count()
   if start is None:
     start = node.nullid
   if stop is None:
