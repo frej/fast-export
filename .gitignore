@@ -1,2 +1,3 @@
 svn-archive
 svn-fast-export
+*.pyc
