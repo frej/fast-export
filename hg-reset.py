@@ -4,7 +4,7 @@
 # License: GPLv2
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
-from hg2git import setup_repo,load_cache,get_changeset
+from hg2git import setup_repo,load_cache,get_changeset,get_git_sha1
 from optparse import OptionParser
 import sys
 
@@ -37,14 +37,21 @@ def heads(ui,repo,start=None,stop=None,max=None):
 
 def get_branches(ui,repo,heads_cache,marks_cache,max):
   h=heads(ui,repo,max=max)
-  old=dict.fromkeys(heads_cache)
-  r=[]
+  stale=dict.fromkeys(heads_cache)
+  changed=[]
+  unchanged=[]
   for node,rev in h:
     _,_,user,(_,_),_,desc,branch,_=get_changeset(ui,repo,rev)
-    del old[branch]
-    r.append([branch,marks_cache.get(str(int(rev)+1)),rev,desc.split('\n')[0],user])
-  r.sort()
-  return old,r
+    del stale[branch]
+    git_sha1=get_git_sha1(branch)
+    cache_sha1=marks_cache.get(str(int(rev)+1))
+    if git_sha1!=None and git_sha1==cache_sha1:
+      unchanged.append([branch,cache_sha1,rev,desc.split('\n')[0],user])
+    else:
+      changed.append([branch,cache_sha1,rev,desc.split('\n')[0],user])
+  changed.sort()
+  unchanged.sort()
+  return stale,changed,unchanged
 
 if __name__=='__main__':
   def bail(parser,opt):
@@ -83,10 +90,13 @@ if __name__=='__main__':
     sys.exit(1)
 
   ui,repo=setup_repo(options.repourl)
-  stale,changed=get_branches(ui,repo,heads_cache,marks_cache,options.revision+1)
+  stale,changed,unchanged=get_branches(ui,repo,heads_cache,marks_cache,options.revision+1)
 
   print "Possibly stale branches:"
   map(lambda b: sys.stdout.write('\t%s\n' % b),stale.keys())
+
+  print "Unchanged branches:"
+  map(lambda b: sys.stdout.write('\t%s (r%s)\n' % (b[0],b[2])),unchanged)
 
   print "Reset branches in '%s' to:" % options.headsfile
   map(lambda b: sys.stdout.write('\t:%s %s\n\t\t(r%s: %s: %s)\n' % (b[0],b[1],b[2],b[4],b[3])),changed)

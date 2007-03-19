@@ -76,3 +76,12 @@ def save_cache(filename,cache):
   f=open(filename,'w+')
   map(lambda x: f.write(':%s %s\n' % (str(x),str(cache.get(x)))),cache.keys())
   f.close()
+
+def get_git_sha1(name,type='heads'):
+  try:
+    f=open(os.getenv('GIT_DIR','/dev/null')+'/refs/'+type+'/'+name)
+    sha1=f.readlines()[0].split('\n')[0]
+    f.close()
+    return sha1
+  except IOError:
+    return None

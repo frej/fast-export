@@ -4,7 +4,7 @@
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
-from hg2git import setup_repo,fixup_user,get_branch,get_changeset,load_cache,save_cache
+from hg2git import setup_repo,fixup_user,get_branch,get_changeset,load_cache,save_cache,get_git_sha1
 from tempfile import mkstemp
 from optparse import OptionParser
 import re
@@ -260,15 +260,6 @@ def load_authors(filename):
   return cache
 
 def verify_heads(ui,repo,cache,force):
-  def getsha1(branch):
-    try:
-      f=open(os.getenv('GIT_DIR','/dev/null')+'/refs/heads/'+branch)
-      sha1=f.readlines()[0].split('\n')[0]
-      f.close()
-      return sha1
-    except IOError:
-      return None
-
   branches=repo.branchtags()
   l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
   l.sort()
@@ -276,7 +267,7 @@ def verify_heads(ui,repo,cache,force):
   # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
     b=get_branch(b)
-    sha1=getsha1(b)
+    sha1=get_git_sha1(b)
     c=cache.get(b)
     if sha1!=None and c!=None:
       sys.stderr.write('Verifying branch [%s]\n' % b)
