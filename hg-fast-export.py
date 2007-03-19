@@ -362,9 +362,9 @@ if __name__=='__main__':
   if options.max!=None: m=options.max
 
   if options.marksfile==None: bail(parser,'--marks')
-  if options.marksfile==None: bail(parser,'--heads')
-  if options.marksfile==None: bail(parser,'--status')
-  if options.marksfile==None: bail(parser,'--repo')
+  if options.headsfile==None: bail(parser,'--heads')
+  if options.statusfile==None: bail(parser,'--status')
+  if options.repourl==None: bail(parser,'--repo')
 
   a={}
   if options.authorfile!=None:
