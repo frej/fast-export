@@ -53,6 +53,22 @@ def get_branches(ui,repo,heads_cache,marks_cache,max):
   unchanged.sort()
   return stale,changed,unchanged
 
+def get_tags(ui,repo,marks_cache,max):
+  l=repo.tagslist()
+  good,bad=[],[]
+  for tag,node in l:
+    if tag=='tip': continue
+    rev=repo.changelog.rev(node)
+    cache_sha1=marks_cache.get(str(int(rev)+1))
+    _,_,user,(_,_),_,desc,branch,_=get_changeset(ui,repo,rev)
+    if int(rev)>int(max):
+      bad.append([tag,branch,cache_sha1,rev,desc.split('\n')[0],user])
+    else:
+      good.append([tag,branch,cache_sha1,rev,desc.split('\n')[0],user])
+  good.sort()
+  bad.sort()
+  return good,bad
+
 if __name__=='__main__':
   def bail(parser,opt):
     sys.stderr.write('Error: No option %s given\n' % opt)
@@ -90,13 +106,21 @@ if __name__=='__main__':
     sys.exit(1)
 
   ui,repo=setup_repo(options.repourl)
+
   stale,changed,unchanged=get_branches(ui,repo,heads_cache,marks_cache,options.revision+1)
+  good,bad=get_tags(ui,repo,marks_cache,options.revision+1)
 
   print "Possibly stale branches:"
   map(lambda b: sys.stdout.write('\t%s\n' % b),stale.keys())
 
+  print "Possibly stale tags:"
+  map(lambda b: sys.stdout.write('\t%s on %s (r%s)\n' % (b[0],b[1],b[3])),bad)
+
   print "Unchanged branches:"
   map(lambda b: sys.stdout.write('\t%s (r%s)\n' % (b[0],b[2])),unchanged)
+
+  print "Unchanged tags:"
+  map(lambda b: sys.stdout.write('\t%s on %s (r%s)\n' % (b[0],b[1],b[3])),good)
 
   print "Reset branches in '%s' to:" % options.headsfile
   map(lambda b: sys.stdout.write('\t:%s %s\n\t\t(r%s: %s: %s)\n' % (b[0],b[1],b[2],b[4],b[3])),changed)
