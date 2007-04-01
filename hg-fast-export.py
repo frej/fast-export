@@ -287,8 +287,11 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
           ' %s at r%d\n' % (tag,rev))
       continue
     sys.stderr.write('Exporting tag [%s] at [hg r%d] [git %s]\n' % (tag,rev,ref))
-    wr('reset refs/tags/%s' % tag)
+    wr('tag %s' % tag)
     wr('from %s' % ref)
+    (_,_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,rev,authors)
+    wr('tagger %s %d %s' % (user,time,timezone))
+    wr('data 0')
     wr()
     count=checkpoint(count)
   return count
