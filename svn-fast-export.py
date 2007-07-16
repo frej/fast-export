@@ -28,8 +28,10 @@ def dump_file_blob(root, full_path, pool):
     stream_length = svn_fs_file_length(root, full_path, pool)
     stream = svn_fs_file_contents(root, full_path, pool)
     sys.stdout.write("data %s\n" % stream_length)
+    sys.stdout.flush()
     ostream = svn_stream_for_stdout(pool)
     svn_stream_copy(stream, ostream, pool)
+    svn_stream_close(ostream)
     sys.stdout.write("\n")
 
 
