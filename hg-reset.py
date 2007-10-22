@@ -69,6 +69,9 @@ def get_tags(ui,repo,marks_cache,max):
   bad.sort()
   return good,bad
 
+def mangle_mark(mark):
+  return str(int(mark)-1)
+
 if __name__=='__main__':
   def bail(parser,opt):
     sys.stderr.write('Error: No option %s given\n' % opt)
@@ -97,7 +100,7 @@ if __name__=='__main__':
   if options.revision==None: bail(parser,'-R/--revision')
 
   heads_cache=load_cache(options.headsfile)
-  marks_cache=load_cache(options.marksfile)
+  marks_cache=load_cache(options.marksfile,mangle_mark)
   state_cache=load_cache(options.statusfile)
 
   l=int(state_cache.get('tip',options.revision))
