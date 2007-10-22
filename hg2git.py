@@ -6,6 +6,7 @@
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
 import re
 import os
+import sys
 
 # git branch for hg's default 'HEAD' branch
 cfg_master='master'
@@ -80,9 +81,13 @@ def save_cache(filename,cache):
 
 def get_git_sha1(name,type='heads'):
   try:
-    f=open(os.getenv('GIT_DIR','/dev/null')+'/refs/'+type+'/'+name)
-    sha1=f.readlines()[0].split('\n')[0]
-    f.close()
-    return sha1
+    # use git-rev-parse to support packed refs
+    cmd="GIT_DIR='%s' git-rev-parse --verify refs/%s/%s 2>/dev/null" % (os.getenv('GIT_DIR','/dev/null'),type,name)
+    p=os.popen(cmd)
+    l=p.readline()
+    p.close()
+    if l == None or len(l) == 0:
+      return None
+    return l[0:40]
   except IOError:
     return None
