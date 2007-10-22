@@ -57,7 +57,10 @@ def get_changeset(ui,repo,revision,authors={}):
   branch=get_branch(extra.get('branch','master'))
   return (node,manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
 
-def load_cache(filename):
+def mangle_key(key):
+  return key
+
+def load_cache(filename,get_key=mangle_key):
   cache={}
   if not os.path.exists(filename):
     return cache
@@ -70,7 +73,7 @@ def load_cache(filename):
       sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
       continue
     # put key:value in cache, key without ^:
-    cache[fields[0][1:]]=fields[1].split('\n')[0]
+    cache[get_key(fields[0][1:])]=fields[1].split('\n')[0]
   f.close()
   return cache
 
