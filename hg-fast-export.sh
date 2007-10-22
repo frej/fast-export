@@ -10,7 +10,7 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
-PYTHON=${PYTHON:python}
+PYTHON=${PYTHON:-python}
 
 USAGE="[--quiet] [-r <repo>] [-m <max>] [-s] [-A <file>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>

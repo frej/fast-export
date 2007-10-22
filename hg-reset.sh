@@ -10,7 +10,7 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
-PYTHON=${PYTHON:python}
+PYTHON=${PYTHON:-python}
 
 USAGE="[-r <repo>] -R <rev>"
 LONG_USAGE="Print SHA1s of latest changes per branch up to <rev> useful
