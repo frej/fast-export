@@ -22,6 +22,8 @@ def gitmode(x):
   return x and '100755' or '100644'
 
 def wr(msg=''):
+  if msg == None:
+    msg = ''
   print msg
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
@@ -37,7 +39,7 @@ def get_parent_mark(parent,marks):
   """Get the mark for some parent.
   If we saw it in the current session, return :%d syntax and
   otherwise the SHA1 from the cache."""
-  return marks.get(str(parent+1),':%d' % (parent+1))
+  return marks.get(str(parent),':%d' % (parent+1))
 
 def mismatch(f1,f2):
   """See if two revisions of a file are not equal."""
@@ -147,6 +149,10 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
   wr(desc)
   wr()
 
+  pidx1, pidx2 = 0, 1
+  if parents[0] < parents[1]:
+    pidx1, pidx2 = 1, 0
+
   src=heads.get(branch,'')
   link=''
   if src!='':
@@ -154,34 +160,27 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
     # and kill reference so we won't init it again
     wr('from %s' % src)
     heads[branch]=''
-    sys.stderr.write('Initializing branch [%s] to parent [%s]\n' %
+    sys.stderr.write('%s: Initializing to parent [%s]\n' %
         (branch,src))
     link=src # avoid making a merge commit for incremental import
   elif link=='' and not heads.has_key(branch) and revision>0:
     # newly created branch and not the first one: connect to parent
     tmp=get_parent_mark(parents[0],marks)
     wr('from %s' % tmp)
-    sys.stderr.write('Link new branch [%s] to parent [%s]\n' %
+    sys.stderr.write('%s: Link new branch to parent [%s]\n' %
         (branch,tmp))
     link=tmp # avoid making a merge commit for branch fork
+  elif last.get(branch,revision) != parents[pidx1] and parents[pidx1] > 0 and revision > 0:
+    pm=get_parent_mark(parents[pidx1],marks)
+    sys.stderr.write('%s: Placing commit [r%d] in branch [%s] on top of [r%d]\n' %
+        (branch,revision,branch,parents[pidx1]));
+    wr('from %s' % pm)
 
-  if parents:
-    l=last.get(branch,revision)
-    for p in parents:
-      # 1) as this commit implicitely is the child of the most recent
-      #    commit of this branch, ignore this parent
-      # 2) ignore nonexistent parents
-      # 3) merge otherwise
-      if p==l or p==revision or p<0:
-        continue
-      tmp=get_parent_mark(p,marks)
-      # if we fork off a branch, don't merge with our parent via 'merge'
-      # as we have 'from' already above
-      if tmp==link:
-        continue
-      sys.stderr.write('Merging branch [%s] with parent [%s] from [r%d]\n' %
-          (branch,tmp,p))
-      wr('merge %s' % tmp)
+  if parents[pidx2] > 0:
+    pm=get_parent_mark(parents[pidx2],marks)
+    sys.stderr.write('%s: Merging with parent [%s] from [r%d]\n' %
+        (branch,pm,parents[pidx2]))
+    wr('merge %s' % pm)
 
   last[branch]=revision
   heads[branch]=''
@@ -210,8 +209,8 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
     added,changed,removed=f[1],f[0],f[2]
     type='simple delta'
 
-  sys.stderr.write('Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
-      (type,revision+1,max,len(added),len(changed),len(removed)))
+  sys.stderr.write('%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
+      (branch,type,revision+1,max,len(added),len(changed),len(removed)))
 
   map(lambda r: wr('D %s' % r),removed)
   export_file_contents(ctx,man,added+changed)
@@ -288,10 +287,13 @@ def verify_heads(ui,repo,cache,force):
 
   return True
 
+def mangle_mark(mark):
+  return str(int(mark)-1)
+
 def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=False):
   _max=int(m)
 
-  marks_cache=load_cache(marksfile)
+  marks_cache=load_cache(marksfile,mangle_mark)
   heads_cache=load_cache(headsfile)
   state_cache=load_cache(tipfile)
 
