@@ -44,7 +44,8 @@ def fixup_user(user,authors):
   return '%s %s' % (name,mail)
 
 def get_branch(name):
-  if name=='HEAD':
+  # HEAD may be from CVS imports into hg
+  if name=='HEAD' or name=='default' or name=='':
     name=cfg_master
   return name
 
