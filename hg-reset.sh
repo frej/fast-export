@@ -10,6 +10,7 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
+PYTHON=${PYTHON:python}
 
 USAGE="[-r <repo>] -R <rev>"
 LONG_USAGE="Print SHA1s of latest changes per branch up to <rev> useful
@@ -54,7 +55,7 @@ if [ ! -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
   touch "$GIT_DIR/$PFX-$SFX_MARKS"
 fi
 
-GIT_DIR="$GIT_DIR" python "$ROOT/hg-reset.py" \
+GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-reset.py" \
   --repo "$REPO" \
   --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \

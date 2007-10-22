@@ -10,6 +10,7 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
+PYTHON=${PYTHON:python}
 
 USAGE="[--quiet] [-r <repo>] [-m <max>] [-s] [-A <file>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
@@ -62,7 +63,7 @@ if [ ! -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
   touch "$GIT_DIR/$PFX-$SFX_MARKS"
 fi
 
-GIT_DIR="$GIT_DIR" python "$ROOT/hg-fast-export.py" \
+GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
   --repo "$REPO" \
   --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
