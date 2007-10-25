@@ -305,7 +305,7 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=Fals
 
   min=int(state_cache.get('tip',0))
   max=_max
-  if _max<0:
+  if _max<0 or max>tip:
     max=tip
 
   c=0
