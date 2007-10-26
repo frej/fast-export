@@ -41,18 +41,18 @@ def get_parent_mark(parent,marks):
   otherwise the SHA1 from the cache."""
   return marks.get(str(parent),':%d' % (parent+1))
 
-def mismatch(f1,f2):
+def file_mismatch(f1,f2):
   """See if two revisions of a file are not equal."""
   return node.hex(f1)!=node.hex(f2)
 
-def outer_set(dleft,dright,l,c,r):
+def split_dict(dleft,dright,l=[],c=[],r=[],match=file_mismatch):
   """Loop over our repository and find all changed and missing files."""
   for left in dleft.keys():
     right=dright.get(left,None)
     if right==None:
       # we have the file but our parent hasn't: add to left set
       l.append(left)
-    elif mismatch(dleft[left],right):
+    elif match(dleft[left],right):
       # we have it but checksums mismatch: add to center set
       c.append(left)
   for right in dright.keys():
@@ -69,11 +69,10 @@ def get_filechanges(repo,revision,parents,mleft):
   for p in parents:
     if p<0: continue
     mright=repo.changectx(p).manifest()
-    dleft=mleft.keys()
-    dleft.sort()
-    dright=mright.keys()
-    dright.sort()
-    l,c,r=outer_set(mleft,mright,l,c,r)
+    l,c,r=split_dict(mleft,mright,l,c,r)
+  l.sort()
+  c.sort()
+  r.sort()
   return l,c,r
 
 def get_author(logmessage,committer,authors):
@@ -115,11 +114,9 @@ def get_author(logmessage,committer,authors):
 
 def export_file_contents(ctx,manifest,files):
   count=0
-  files.sort()
   max=len(files)
   for file in files:
-    fctx=ctx.filectx(file)
-    d=fctx.data()
+    d=ctx.filectx(file).data()
     wr('M %s inline %s' % (gitmode(manifest.execf(file)),file))
     wr('data %d' % len(d)) # had some trouble with size()
     wr(d)
@@ -136,9 +133,30 @@ def is_merge(parents):
       c+=1
   return c>1
 
+def sanitize_name(name,what="branch"):
+  """Sanitize input roughly according to git-check-ref-format(1)"""
+
+  def dot(name):
+    if name[0] == '.': return '_'+name[1:]
+    return name
+
+  n=name
+  p=re.compile('([[ ^:?*]|\.\.)')
+  n=p.sub('_', n)
+  if n[-1] == '/': n=n[:-1]+'_'
+  n='/'.join(map(dot,n.split('/')))
+  p=re.compile('_+')
+  n=p.sub('_', n)
+
+  if n!=name:
+    sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
+  return n
+
 def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
   (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
   parents=repo.changelog.parentrevs(revision)
+
+  branch=sanitize_name(branch)
 
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
@@ -194,6 +212,7 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
   if revision==0:
     # first revision: feed in full manifest
     added=man.keys()
+    added.sort()
     type='full'
   elif is_merge(parents):
     # later merge revision: feed in changed manifest
@@ -213,7 +232,8 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
       (branch,type,revision+1,max,len(added),len(changed),len(removed)))
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added+changed)
+  export_file_contents(ctx,man,added)
+  export_file_contents(ctx,man,changed)
   wr()
 
   return checkpoint(count)
@@ -221,6 +241,7 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
 def export_tags(ui,repo,marks_cache,start,end,count,authors):
   l=repo.tagslist()
   for tag,node in l:
+    tag=sanitize_name(tag,"tag")
     # ignore latest revision
     if tag=='tip': continue
     rev=repo.changelog.rev(node)
@@ -306,7 +327,7 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=Fals
 
   min=int(state_cache.get('tip',0))
   max=_max
-  if _max<0:
+  if _max<0 or max>tip:
     max=tip
 
   c=0
