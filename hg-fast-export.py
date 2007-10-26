@@ -152,11 +152,18 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob):
+def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob,brmap):
+  def get_branchname(name):
+    if brmap.has_key(name):
+      return brmap[name]
+    n=sanitize_name(name)
+    brmap[name]=n
+    return n
+
   (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
   parents=repo.changelog.parentrevs(revision)
 
-  branch=sanitize_name(branch)
+  branch=get_branchname(branch)
 
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
@@ -332,8 +339,9 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=Fals
 
   c=0
   last={}
+  brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,max,c,authors,sob)
+    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,max,c,authors,sob,brmap)
 
   c=export_tags(ui,repo,marks_cache,min,max,c,authors)
 
