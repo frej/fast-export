@@ -8,7 +8,7 @@ import re
 import os
 import sys
 
-# git branch for hg's default 'HEAD' branch
+# default git branch name
 cfg_master='master'
 # silly regex to see if user field has email address
 user_re=re.compile('([^<]+) (<[^>]+>)$')
@@ -45,7 +45,8 @@ def fixup_user(user,authors):
   return '%s %s' % (name,mail)
 
 def get_branch(name):
-  # HEAD may be from CVS imports into hg
+  # 'HEAD' is the result of a bug in mutt's cvs->hg conversion,
+  # other CVS imports may need it, too
   if name=='HEAD' or name=='default' or name=='':
     name=cfg_master
   return name.replace(' ', '_')
