@@ -48,7 +48,7 @@ def get_branch(name):
   # HEAD may be from CVS imports into hg
   if name=='HEAD' or name=='default' or name=='':
     name=cfg_master
-  return name
+  return name.replace(' ', '_')
 
 def get_changeset(ui,repo,revision,authors={}):
   node=repo.lookup(revision)
