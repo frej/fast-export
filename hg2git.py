@@ -49,7 +49,7 @@ def get_branch(name):
   # other CVS imports may need it, too
   if name=='HEAD' or name=='default' or name=='':
     name=cfg_master
-  return name.replace(' ', '_')
+  return name
 
 def get_changeset(ui,repo,revision,authors={}):
   node=repo.lookup(revision)
