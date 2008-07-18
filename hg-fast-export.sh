@@ -28,7 +28,7 @@ Options:
 	-r	Mercurial repository to import
 "
 
-. git-sh-setup
+. "$(git --exec-path)/git-sh-setup"
 cd_to_toplevel
 
 while case "$#" in 0) break ;; esac
@@ -69,7 +69,7 @@ GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
   --status "$GIT_DIR/$PFX-$SFX_STATE" \
   "$@" \
-| git-fast-import $QUIET --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
+| git fast-import $QUIET --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
 || die 'Git fast-import failed'
 
 # move recent marks cache out of the way...
@@ -89,7 +89,7 @@ rm -rf "$GIT_DIR/$PFX-$SFX_MARKS.old" "$GIT_DIR/$PFX-$SFX_MARKS.tmp"
 # save SHA1s of current heads for incremental imports
 # and connectivity (plus sanity checking)
 for head in `git branch | sed 's#^..##'` ; do
-  id="`git-rev-parse $head`"
+  id="`git rev-parse $head`"
   echo ":$head $id"
 done > "$GIT_DIR/$PFX-$SFX_HEADS"
 

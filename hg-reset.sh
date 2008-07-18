@@ -23,7 +23,7 @@ Options:
 	-r	Mercurial repository to use
 "
 
-. git-sh-setup
+. "$(git --exec-path)/git-sh-setup"
 cd_to_toplevel
 
 while case "$#" in 0) break ;; esac
