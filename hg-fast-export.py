@@ -18,8 +18,8 @@ cfg_checkpoint_count=0
 # write some progress message every this many file contents written
 cfg_export_boundary=1000
 
-def gitmode(x):
-  return x and '100755' or '100644'
+def gitmode(flags):
+  return 'l' in flags and '120000' or 'x' in flags and '100755' or '100644'
 
 def wr(msg=''):
   if msg == None:
@@ -117,7 +117,7 @@ def export_file_contents(ctx,manifest,files):
   max=len(files)
   for file in files:
     d=ctx.filectx(file).data()
-    wr('M %s inline %s' % (gitmode(manifest.execf(file)),file))
+    wr('M %s inline %s' % (gitmode(manifest.flags(file)),file))
     wr('data %d' % len(d)) # had some trouble with size()
     wr(d)
     count+=1
