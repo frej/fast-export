@@ -4,7 +4,8 @@
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
-from hg2git import setup_repo,fixup_user,get_branch,get_changeset,load_cache,save_cache,get_git_sha1
+from hg2git import setup_repo,fixup_user,get_branch,get_changeset
+from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch
 from tempfile import mkstemp
 from optparse import OptionParser
 import re
@@ -380,6 +381,8 @@ if __name__=='__main__':
       help="Read authormap from AUTHORFILE")
   parser.add_option("-f","--force",action="store_true",dest="force",
       default=False,help="Ignore validation errors by force")
+  parser.add_option("-M","--default-branch",dest="default_branch",
+      help="Set the default branch")
 
   (options,args)=parser.parse_args()
 
@@ -394,6 +397,9 @@ if __name__=='__main__':
   a={}
   if options.authorfile!=None:
     a=load_authors(options.authorfile)
+
+  if options.default_branch!=None:
+    set_default_branch(options.default_branch)
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
     options.statusfile,authors=a,sob=options.sob,force=options.force))

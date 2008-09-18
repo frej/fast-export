@@ -12,7 +12,7 @@ SFX_STATE="state"
 QUIET=""
 PYTHON=${PYTHON:-python}
 
-USAGE="[--quiet] [-r <repo>] [-m <max>] [-s] [-A <file>]"
+USAGE="[--quiet] [-r <repo>] [-m <max>] [-s] [-A <file>] [-M <branch_name>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
@@ -26,6 +26,7 @@ Options:
 	-A	Read author map from file
 		(Same as in git-svnimport(1) and git-cvsimport(1))
 	-r	Mercurial repository to import
+        -M      Set the default branch name
 "
 
 . "$(git --exec-path)/git-sh-setup"

@@ -15,6 +15,10 @@ user_re=re.compile('([^<]+) (<[^>]+>)$')
 # silly regex to clean out user names
 user_clean_re=re.compile('^["]([^"]+)["]$')
 
+def set_default_branch(name):
+  global cfg_master
+  cfg_master = name
+
 def setup_repo(url):
   myui=ui.ui(interactive=False)
   return myui,hg.repository(myui,url)
