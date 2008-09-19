@@ -10,6 +10,8 @@ import sys
 
 # default git branch name
 cfg_master='master'
+# default origin name
+origin_name=''
 # silly regex to see if user field has email address
 user_re=re.compile('([^<]+) (<[^>]+>)$')
 # silly regex to clean out user names
@@ -18,6 +20,10 @@ user_clean_re=re.compile('^["]([^"]+)["]$')
 def set_default_branch(name):
   global cfg_master
   cfg_master = name
+
+def set_origin_name(name):
+  global origin_name
+  origin_name = name
 
 def setup_repo(url):
   myui=ui.ui(interactive=False)
@@ -53,6 +59,8 @@ def get_branch(name):
   # other CVS imports may need it, too
   if name=='HEAD' or name=='default' or name=='':
     name=cfg_master
+  if origin_name:
+    return origin_name + '/' + name
   return name
 
 def get_changeset(ui,repo,revision,authors={}):

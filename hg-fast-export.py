@@ -5,7 +5,7 @@
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
-from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch
+from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from tempfile import mkstemp
 from optparse import OptionParser
 import re
@@ -383,6 +383,8 @@ if __name__=='__main__':
       default=False,help="Ignore validation errors by force")
   parser.add_option("-M","--default-branch",dest="default_branch",
       help="Set the default branch")
+  parser.add_option("-o","--origin",dest="origin_name",
+      help="use <name> as namespace to track upstream")
 
   (options,args)=parser.parse_args()
 
@@ -400,6 +402,9 @@ if __name__=='__main__':
 
   if options.default_branch!=None:
     set_default_branch(options.default_branch)
+
+  if options.origin_name!=None:
+    set_origin_name(options.origin_name)
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
     options.statusfile,authors=a,sob=options.sob,force=options.force))
