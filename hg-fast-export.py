@@ -330,7 +330,10 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=Fals
   if not verify_heads(ui,repo,heads_cache,force):
     return 1
 
-  tip=repo.changelog.count()
+  try:
+    tip=repo.changelog.count()
+  except AttributeError:
+    tip=len(repo)
 
   min=int(state_cache.get('tip',0))
   max=_max
