@@ -180,8 +180,10 @@ def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,so
   wr()
 
   pidx1, pidx2 = 0, 1
-  if parents[0] < parents[1]:
-    pidx1, pidx2 = 1, 0
+  if parents[1] > 0:
+    if parents[0] <= 0 or \
+        repo.changelog.node(parents[0]) < repo.changelog.node(parents[1]):
+      pidx1, pidx2 = 1, 0
 
   full_rev=False
   if revision==0: full_rev=True
