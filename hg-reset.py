@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2007 Rocco Rutte <pdmef@gmx.net>
+# Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: GPLv2
 
 from mercurial import repo,hg,cmdutil,util,ui,revlog,node

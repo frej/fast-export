@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2007 Rocco Rutte <pdmef@gmx.net>
+# Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 ROOT="`dirname $0`"

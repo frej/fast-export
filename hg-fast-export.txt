@@ -8,6 +8,8 @@ by Rocco Rutte <pdmef@gmx.net> with hints and help from the git list and
 #mercurial on freenode. hg-reset.py is licensed under GPLv2 since it
 copies some code from the mercurial sources.
 
+The current maintainer is Frej Drejhammar <frej.drejhammar@gmail.com>.
+
 Usage
 =====
 
