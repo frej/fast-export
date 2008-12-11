@@ -7,6 +7,7 @@ ROOT="`dirname $0`"
 REPO=""
 PFX="hg2git"
 SFX_MARKS="marks"
+SFX_MAPPING="mapping"
 SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
@@ -58,6 +59,7 @@ fi
 GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-reset.py" \
   --repo "$REPO" \
   --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
+  --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
   --status "$GIT_DIR/$PFX-$SFX_STATE" \
   "$@"
