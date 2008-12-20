@@ -6,6 +6,7 @@
 ROOT="`dirname $0`"
 REPO=""
 PFX="hg2git"
+SFX_MAPPING="mapping"
 SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
@@ -68,11 +69,11 @@ fi
 GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
   --repo "$REPO" \
   --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
+  --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
   --status "$GIT_DIR/$PFX-$SFX_STATE" \
   "$@" \
-| git fast-import $QUIET --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
-|| die 'Git fast-import failed'
+| git fast-import $QUIET --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" 
 
 # move recent marks cache out of the way...
 if [ -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then

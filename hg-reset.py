@@ -35,7 +35,7 @@ def heads(ui,repo,start=None,stop=None,max=None):
 
   return [(repo.changelog.node(r),str(r)) for r in heads]
 
-def get_branches(ui,repo,heads_cache,marks_cache,max):
+def get_branches(ui,repo,heads_cache,marks_cache,mapping_cache,max):
   h=heads(ui,repo,max=max)
   stale=dict.fromkeys(heads_cache)
   changed=[]
@@ -53,12 +53,12 @@ def get_branches(ui,repo,heads_cache,marks_cache,max):
   unchanged.sort()
   return stale,changed,unchanged
 
-def get_tags(ui,repo,marks_cache,max):
+def get_tags(ui,repo,marks_cache,mapping_cache,max):
   l=repo.tagslist()
   good,bad=[],[]
   for tag,node in l:
     if tag=='tip': continue
-    rev=repo.changelog.rev(node)
+    rev=int(mapping_cache[node.encode('hex_codec')])
     cache_sha1=marks_cache.get(str(int(rev)+1))
     _,_,user,(_,_),_,desc,branch,_=get_changeset(ui,repo,rev)
     if int(rev)>int(max):
@@ -110,8 +110,8 @@ if __name__=='__main__':
 
   ui,repo=setup_repo(options.repourl)
 
-  stale,changed,unchanged=get_branches(ui,repo,heads_cache,marks_cache,options.revision+1)
-  good,bad=get_tags(ui,repo,marks_cache,options.revision+1)
+  stale,changed,unchanged=get_branches(ui,repo,heads_cache,marks_cache,mapping_cache,options.revision+1)
+  good,bad=get_tags(ui,repo,marks_cache,mapping_cache,options.revision+1)
 
   print "Possibly stale branches:"
   map(lambda b: sys.stdout.write('\t%s\n' % b),stale.keys())

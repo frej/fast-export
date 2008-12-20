@@ -117,6 +117,10 @@ def export_file_contents(ctx,manifest,files):
   count=0
   max=len(files)
   for file in files:
+    # Skip .hgtags files. They only get us in trouble.
+    if file == ".hgtags":
+      sys.stderr.write('Skip %s\n' % (file))
+      continue
     d=ctx.filectx(file).data()
     wr('M %s inline %s' % (gitmode(manifest.flags(file)),file))
     wr('data %d' % len(d)) # had some trouble with size()
@@ -153,7 +157,7 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob,brmap):
+def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,sob,brmap):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -246,17 +250,20 @@ def export_commit(ui,repo,revision,marks,heads,last,max,count,authors,sob,brmap)
 
   return checkpoint(count)
 
-def export_tags(ui,repo,marks_cache,start,end,count,authors):
+def export_tags(ui,repo,marks_cache,mapping_cache,count,authors):
   l=repo.tagslist()
   for tag,node in l:
     tag=sanitize_name(tag,"tag")
     # ignore latest revision
     if tag=='tip': continue
-    rev=repo.changelog.rev(node)
-    # ignore those tags not in our import range
-    if rev<start or rev>=end: continue
+    # ignore tags to nodes that are missing (ie, 'in the future')
+    if node.encode('hex_codec') not in mapping_cache:
+      sys.stderr.write('Tag %s refers to unseen node %s\n' % (tag, node.encode('hex_codec')))
+      continue
 
-    ref=get_parent_mark(rev,marks_cache)
+    rev=int(mapping_cache[node.encode('hex_codec')])
+
+    ref=marks_cache.get(str(rev),':%d' % (rev))
     if ref==None:
       sys.stderr.write('Failed to find reference for creating tag'
           ' %s at r%d\n' % (tag,rev))
@@ -319,10 +326,11 @@ def verify_heads(ui,repo,cache,force):
 def mangle_mark(mark):
   return str(int(mark)-1)
 
-def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=False):
+def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False):
   _max=int(m)
 
   marks_cache=load_cache(marksfile,mangle_mark)
+  mapping_cache=load_cache(mappingfile)
   heads_cache=load_cache(headsfile)
   state_cache=load_cache(tipfile)
 
@@ -341,19 +349,25 @@ def hg2git(repourl,m,marksfile,headsfile,tipfile,authors={},sob=False,force=Fals
   if _max<0 or max>tip:
     max=tip
 
+  for rev in range(0,max):
+  	(revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
+  	mapping_cache[revnode.encode('hex_codec')] = str(rev)
+
+
   c=0
   last={}
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,marks_cache,heads_cache,last,max,c,authors,sob,brmap)
-
-  c=export_tags(ui,repo,marks_cache,min,max,c,authors)
-
-  sys.stderr.write('Issued %d commands\n' % c)
+    c=export_commit(ui,repo,rev,marks_cache,mapping_cache,heads_cache,last,max,c,authors,sob,brmap)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
   save_cache(tipfile,state_cache)
+  save_cache(mappingfile,mapping_cache)
+
+  c=export_tags(ui,repo,marks_cache,mapping_cache,c,authors)
+
+  sys.stderr.write('Issued %d commands\n' % c)
 
   return 0
 
@@ -367,6 +381,8 @@ if __name__=='__main__':
 
   parser.add_option("-m","--max",type="int",dest="max",
       help="Maximum hg revision to import")
+  parser.add_option("--mapping",dest="mappingfile",
+      help="File to read last run's hg-to-git SHA1 mapping")
   parser.add_option("--marks",dest="marksfile",
       help="File to read git-fast-import's marks from")
   parser.add_option("--heads",dest="headsfile",
@@ -392,6 +408,7 @@ if __name__=='__main__':
   if options.max!=None: m=options.max
 
   if options.marksfile==None: bail(parser,'--marks')
+  if options.mappingfile==None: bail(parser,'--mapping')
   if options.headsfile==None: bail(parser,'--heads')
   if options.statusfile==None: bail(parser,'--status')
   if options.repourl==None: bail(parser,'--repo')
@@ -406,5 +423,5 @@ if __name__=='__main__':
   if options.origin_name!=None:
     set_origin_name(options.origin_name)
 
-  sys.exit(hg2git(options.repourl,m,options.marksfile,options.headsfile,
+  sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,options.headsfile,
     options.statusfile,authors=a,sob=options.sob,force=options.force))
