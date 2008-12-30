@@ -1,4 +1,4 @@
-hg-fast-import.(sh|py) - mercurial to git converter using git-fast-import
+hg-fast-export.(sh|py) - mercurial to git converter using git-fast-import
 
 Legal
 =====
@@ -49,23 +49,6 @@ or any prior repository analysis: if just feeds what it finds into
 git-fast-import. This also implies that it heavily relies on strictly
 linear ordering of changesets from hg, i.e. its append-only storage
 model so that changesets hg-fast-import already saw never get modified.
-
-Todo
-====
-
-For incremental imports, handling tags needs to be reworked (maybe):
-Right now we assume that once a tag is created, it stays forever and
-never changes. However,
-
-  1) tags in hg may be removed
-  2) tags may change
-
-I'm not yet sure how to handle this and how this interferes with
-non-hg-based tags in git.
-
-The same for branches: They may get removed.
-
-For one-time conversions, everything is fine.
 
 Footnotes
 =========
