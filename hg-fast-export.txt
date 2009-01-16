@@ -41,6 +41,10 @@ As each git-fast-import run creates a new pack file, it may be required
 to repack the repository quite often for incremental imports (especially
 when importing a small number of changesets per incremental import).
 
+The way the hg API and remote access protocol is designed it is not
+possible to use hg-fast-export on remote repositories
+(http/ssh). First clone the repository, then convert it.
+
 Design
 ======
 
