@@ -183,6 +183,9 @@ def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,so
   if parents[0] < parents[1]:
     pidx1, pidx2 = 1, 0
 
+  full_rev=False
+  if revision==0: full_rev=True
+
   src=heads.get(branch,'')
   link=''
   if src!='':
@@ -194,12 +197,16 @@ def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,so
         (branch,src))
     link=src # avoid making a merge commit for incremental import
   elif link=='' and not heads.has_key(branch) and revision>0:
-    # newly created branch and not the first one: connect to parent
-    tmp=get_parent_mark(parents[0],marks)
-    wr('from %s' % tmp)
-    sys.stderr.write('%s: Link new branch to parent [%s]\n' %
-        (branch,tmp))
-    link=tmp # avoid making a merge commit for branch fork
+    if parents[0]>=0:
+      # newly created branch with parent: connect to parent
+      tmp=get_parent_mark(parents[0],marks)
+      wr('from %s' % tmp)
+      sys.stderr.write('%s: Link new branch to parent [%s]\n' %
+          (branch,tmp))
+      link=tmp # avoid making a merge commit for branch fork
+    else:
+      # newly created branch without parent: feed full revision
+      full_rev=True
   elif last.get(branch,revision) != parents[pidx1] and parents[pidx1] > 0 and revision > 0:
     pm=get_parent_mark(parents[pidx1],marks)
     sys.stderr.write('%s: Placing commit [r%d] in branch [%s] on top of [r%d]\n' %
@@ -221,7 +228,7 @@ def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,so
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
-  if revision==0:
+  if full_rev:
     # first revision: feed in full manifest
     added=man.keys()
     added.sort()
