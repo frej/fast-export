@@ -267,8 +267,6 @@ def verify_heads(ui,repo,cache,force):
     b=get_branch(b)
     sha1=get_git_sha1(b)
     c=cache.get(b)
-    if sha1!=None and c!=None:
-      sys.stderr.write('Verifying branch [%s]\n' % b)
     if sha1!=c:
       sys.stderr.write('Error: Branch [%s] modified outside hg-fast-export:'
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
