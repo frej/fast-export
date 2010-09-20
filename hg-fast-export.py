@@ -36,11 +36,10 @@ def checkpoint(count):
     wr()
   return count
 
-def get_parent_mark(parent,marks):
-  """Get the mark for some parent.
-  If we saw it in the current session, return :%d syntax and
-  otherwise the SHA1 from the cache."""
-  return marks.get(str(parent),':%d' % (parent+1))
+def revnum_to_revref(rev, old_marks):
+  """Convert an hg revnum to a git-fast-import rev reference (an SHA1
+  or a mark)"""
+  return old_marks.get(rev) or ':%d' % (rev+1)
 
 def file_mismatch(f1,f2):
   """See if two revisions of a file are not equal."""
@@ -131,13 +130,6 @@ def export_file_contents(ctx,manifest,files):
   if max>cfg_export_boundary:
     sys.stderr.write('Exported %d/%d files\n' % (count,max))
 
-def is_merge(parents):
-  c=0
-  for parent in parents:
-    if parent>=0:
-      c+=1
-  return c>1
-
 def sanitize_name(name,what="branch"):
   """Sanitize input roughly according to git-check-ref-format(1)"""
 
@@ -157,7 +149,7 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,sob,brmap):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -166,7 +158,6 @@ def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,so
     return n
 
   (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors)
-  parents=repo.changelog.parentrevs(revision)
 
   branch=get_branchname(branch)
 
@@ -179,75 +170,38 @@ def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,so
   wr(desc)
   wr()
 
-  pidx1, pidx2 = 0, 1
-  if parents[1] > 0:
-    if parents[0] <= 0 or \
-        repo.changelog.node(parents[0]) < repo.changelog.node(parents[1]):
-      pidx1, pidx2 = 1, 0
+  parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
 
-  full_rev=False
-  if revision==0: full_rev=True
-
-  src=heads.get(branch,'')
-  link=''
-  if src!='':
-    # if we have a cached head, this is an incremental import: initialize it
-    # and kill reference so we won't init it again
-    wr('from %s' % src)
-    heads[branch]=''
-    sys.stderr.write('%s: Initializing to parent [%s]\n' %
-        (branch,src))
-    link=src # avoid making a merge commit for incremental import
-  elif link=='' and not heads.has_key(branch) and revision>0:
-    if parents[0]>=0:
-      # newly created branch with parent: connect to parent
-      tmp=get_parent_mark(parents[0],marks)
-      wr('from %s' % tmp)
-      sys.stderr.write('%s: Link new branch to parent [%s]\n' %
-          (branch,tmp))
-      link=tmp # avoid making a merge commit for branch fork
-    else:
-      # newly created branch without parent: feed full revision
-      full_rev=True
-  elif last.get(branch,revision) != parents[pidx1] and parents[pidx1] > 0 and revision > 0:
-    pm=get_parent_mark(parents[pidx1],marks)
-    sys.stderr.write('%s: Placing commit [r%d] in branch [%s] on top of [r%d]\n' %
-        (branch,revision,branch,parents[pidx1]));
-    wr('from %s' % pm)
-
-  if parents[pidx2] > 0:
-    pm=get_parent_mark(parents[pidx2],marks)
-    sys.stderr.write('%s: Merging with parent [%s] from [r%d]\n' %
-        (branch,pm,parents[pidx2]))
-    wr('merge %s' % pm)
-
-  last[branch]=revision
-  heads[branch]=''
-  # we need this later to write out tags
-  marks[str(revision)]=':%d'%(revision+1)
+  # Sort the parents based on revision ids so that we always get the
+  # same resulting git repo, no matter how the revisions were
+  # numbered.
+  parents.sort(key=repo.changelog.node, reverse=True)
 
   ctx=repo.changectx(str(revision))
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
-  if full_rev:
+  if len(parents) == 0:
     # first revision: feed in full manifest
     added=man.keys()
     added.sort()
     type='full'
-  elif is_merge(parents):
-    # later merge revision: feed in changed manifest
-    # for many files comparing checksums is expensive so only do it for
-    # merges where we really need it due to hg's revlog logic
-    added,changed,removed=get_filechanges(repo,revision,parents,man)
-    type='thorough delta'
   else:
-    # later non-merge revision: feed in changed manifest
-    # if we have exactly one parent, just take the changes from the
-    # manifest without expensively comparing checksums
-    f=repo.status(repo.lookup(parents[0]),revnode)[:3]
-    added,changed,removed=f[1],f[0],f[2]
-    type='simple delta'
+    wr('from %s' % revnum_to_revref(parents[0], old_marks))
+    if len(parents) == 1:
+      # later non-merge revision: feed in changed manifest
+      # if we have exactly one parent, just take the changes from the
+      # manifest without expensively comparing checksums
+      f=repo.status(repo.lookup(parents[0]),revnode)[:3]
+      added,changed,removed=f[1],f[0],f[2]
+      type='simple delta'
+    else: # a merge with two parents
+      wr('merge %s' % revnum_to_revref(parents[1], old_marks))
+      # later merge revision: feed in changed manifest
+      # for many files comparing checksums is expensive so only do it for
+      # merges where we really need it due to hg's revlog logic
+      added,changed,removed=get_filechanges(repo,revision,parents,man)
+      type='thorough delta'
 
   sys.stderr.write('%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
       (branch,type,revision+1,max,len(added),len(changed),len(removed)))
@@ -259,7 +213,7 @@ def export_commit(ui,repo,revision,marks,mapping,heads,last,max,count,authors,so
 
   return checkpoint(count)
 
-def export_tags(ui,repo,marks_cache,mapping_cache,count,authors):
+def export_tags(ui,repo,old_marks,mapping_cache,count,authors):
   l=repo.tagslist()
   for tag,node in l:
     tag=sanitize_name(tag,"tag")
@@ -272,7 +226,7 @@ def export_tags(ui,repo,marks_cache,mapping_cache,count,authors):
 
     rev=int(mapping_cache[node.encode('hex_codec')])
 
-    ref=marks_cache.get(str(rev),':%d' % (rev))
+    ref=revnum_to_revref(rev, old_marks)
     if ref==None:
       sys.stderr.write('Failed to find reference for creating tag'
           ' %s at r%d\n' % (tag,rev))
@@ -332,13 +286,10 @@ def verify_heads(ui,repo,cache,force):
 
   return True
 
-def mangle_mark(mark):
-  return str(int(mark)-1)
-
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False):
   _max=int(m)
 
-  marks_cache=load_cache(marksfile,mangle_mark)
+  old_marks=load_cache(marksfile,lambda s: int(s)-1)
   mapping_cache=load_cache(mappingfile)
   heads_cache=load_cache(headsfile)
   state_cache=load_cache(tipfile)
@@ -364,17 +315,16 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
 
 
   c=0
-  last={}
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,marks_cache,mapping_cache,heads_cache,last,max,c,authors,sob,brmap)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
   save_cache(tipfile,state_cache)
   save_cache(mappingfile,mapping_cache)
 
-  c=export_tags(ui,repo,marks_cache,mapping_cache,c,authors)
+  c=export_tags(ui,repo,old_marks,mapping_cache,c,authors)
 
   sys.stderr.write('Issued %d commands\n' % c)
 
