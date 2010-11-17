@@ -10,10 +10,10 @@ SFX_MAPPING="mapping"
 SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
-QUIET=""
+GFI_OPTS=""
 PYTHON=${PYTHON:-python}
 
-USAGE="[--quiet] [-r <repo>] [-m <max>] [-s] [-A <file>] [-M <name>] [-o <name>]"
+USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [-A <file>] [-M <name>] [-o <name>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
@@ -42,7 +42,12 @@ do
       REPO="$1"
       ;;
     --q|--qu|--qui|--quie|--quiet)
-      QUIET="--quiet"
+      GFI_OPTS="$GFI_OPTS --quiet"
+      ;;
+    --force)
+      # pass --force to git-fast-import and hg-fast-export.py
+      GFI_OPTS="$GFI_OPTS --force"
+      break
       ;;
     -*)
       # pass any other options down to hg2git.py
@@ -73,7 +78,7 @@ GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
   --status "$GIT_DIR/$PFX-$SFX_STATE" \
   "$@" \
-| git fast-import $QUIET --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" 
+| git fast-import $GFI_OPTS --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" 
 
 # move recent marks cache out of the way...
 if [ -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
