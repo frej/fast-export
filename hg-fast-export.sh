@@ -71,6 +71,9 @@ if [ ! -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
   touch "$GIT_DIR/$PFX-$SFX_MARKS"
 fi
 
+# cleanup on exit
+trap 'rm -f "$GIT_DIR/$PFX-$SFX_MARKS.old" "$GIT_DIR/$PFX-$SFX_MARKS.tmp"' 0
+
 GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
   --repo "$REPO" \
   --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
@@ -78,7 +81,7 @@ GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
   --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
   --status "$GIT_DIR/$PFX-$SFX_STATE" \
   "$@" \
-| git fast-import $GFI_OPTS --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" 
+| git fast-import $GFI_OPTS --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" || exit 1
 
 # move recent marks cache out of the way...
 if [ -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
@@ -90,9 +93,6 @@ fi
 # ...to create a new merged one
 cat "$GIT_DIR/$PFX-$SFX_MARKS.old" "$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
 | uniq > "$GIT_DIR/$PFX-$SFX_MARKS"
-
-# cleanup
-rm -rf "$GIT_DIR/$PFX-$SFX_MARKS.old" "$GIT_DIR/$PFX-$SFX_MARKS.tmp"
 
 # save SHA1s of current heads for incremental imports
 # and connectivity (plus sanity checking)
