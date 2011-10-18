@@ -3,7 +3,7 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-from mercurial import repo,hg,cmdutil,util,ui,revlog,node
+from mercurial import repo,hg,cmdutil,util,ui,revlog,node,templatefilters
 import re
 import os
 import sys
@@ -41,14 +41,13 @@ def fixup_user(user,authors):
     user=authors.get(user,user)
   name,mail,m='','',user_re.match(user)
   if m==None:
-    # if we don't have 'Name <mail>' syntax, use 'user
-    # <devnull@localhost>' if use contains no at and
-    # 'user <user>' otherwise
-    name=user
-    if '@' not in user:
-      mail='<devnull@localhost>'
-    else:
-      mail='<%s>' % user
+    # if we don't have 'Name <mail>' syntax, extract name
+    # and mail from hg helpers. this seems to work pretty well.
+    # if email doesn't contain @, replace it with devnull@localhost
+    name=templatefilters.person(user)
+    mail='<%s>' % util.email(user)
+    if '@' not in mail:
+      mail = '<devnull@localhost>'
   else:
     # if we have 'Name <mail>' syntax, everything is fine :)
     name,mail=m.group(1),m.group(2)
