@@ -13,7 +13,7 @@ cfg_master='master'
 # default origin name
 origin_name=''
 # silly regex to see if user field has email address
-user_re=re.compile('([^<]+) (<[^>]+>)$')
+user_re=re.compile('([^<]+) (<[^>]*>)$')
 # silly regex to clean out user names
 user_clean_re=re.compile('^["]([^"]+)["]$')
 
