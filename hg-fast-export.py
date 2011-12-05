@@ -161,6 +161,11 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap):
 
   branch=get_branchname(branch)
 
+  parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
+
+  if len(parents)==0 and revision != 0:
+    wr('reset refs/heads/%s' % branch)
+
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
   if sob:
@@ -170,7 +175,6 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap):
   wr(desc)
   wr()
 
-  parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
 
   # Sort the parents based on revision ids so that we always get the
   # same resulting git repo, no matter how the revisions were
