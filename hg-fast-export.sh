@@ -27,8 +27,10 @@ Options:
 	-A	Read author map from file
 		(Same as in git-svnimport(1) and git-cvsimport(1))
 	-r	Mercurial repository to import
-        -M      Set the default branch name (default to 'master')
-        -o      Use <name> as branch namespace to track upstream (eg 'origin')
+	-M	Set the default branch name (default to 'master')
+	-o	Use <name> as branch namespace to track upstream (eg 'origin')
+	--force Ignore validation errors when converting, and pass --force
+		to git-fast-import(1)
 "
 
 . "$(git --exec-path)/git-sh-setup"
