@@ -18,7 +18,7 @@ Using hg-fast-export is quite simple for a mercurial repository <repo>:
   mkdir repo-git # or whatever
   cd repo-git
   git init
-  hg-fast-import.sh -r <repo>
+  hg-fast-export.sh -r <repo>
 
 Incremental imports to track hg repos is supported, too.
 
@@ -44,13 +44,14 @@ User <garbage<user@example.com>=User <user@example.com>
 Notes/Limitations
 =================
 
-hg-fast-import supports multiple branches but only named branches with exaclty
-one head each. Otherwise commits to the tip of these heads within branch
-will get flattened into merge commits.
+hg-fast-export supports multiple branches but only named branches with
+exaclty one head each. Otherwise commits to the tip of these heads
+within branch will get flattened into merge commits.
 
-As each git-fast-import run creates a new pack file, it may be required
-to repack the repository quite often for incremental imports (especially
-when importing a small number of changesets per incremental import).
+As each git-fast-import run creates a new pack file, it may be
+required to repack the repository quite often for incremental imports
+(especially when importing a small number of changesets per
+incremental import).
 
 The way the hg API and remote access protocol is designed it is not
 possible to use hg-fast-export on remote repositories
@@ -59,11 +60,12 @@ possible to use hg-fast-export on remote repositories
 Design
 ======
 
-hg-fast-import.py was designed in a way that doesn't require a 2-pass mechanism
-or any prior repository analysis: if just feeds what it finds into
-git-fast-import. This also implies that it heavily relies on strictly
-linear ordering of changesets from hg, i.e. its append-only storage
-model so that changesets hg-fast-import already saw never get modified.
+hg-fast-export.py was designed in a way that doesn't require a 2-pass
+mechanism or any prior repository analysis: if just feeds what it
+finds into git-fast-import. This also implies that it heavily relies
+on strictly linear ordering of changesets from hg, i.e. its
+append-only storage model so that changesets hg-fast-export already
+saw never get modified.
 
 Footnotes
 =========
