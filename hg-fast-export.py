@@ -23,9 +23,9 @@ def gitmode(flags):
   return 'l' in flags and '120000' or 'x' in flags and '100755' or '100644'
 
 def wr(msg=''):
-  if msg == None:
-    msg = ''
-  print msg
+  if msg:
+    sys.stdout.write(msg)
+  sys.stdout.write('\n')
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
 def checkpoint(count):
