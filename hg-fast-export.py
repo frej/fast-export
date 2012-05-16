@@ -140,7 +140,7 @@ def sanitize_name(name,what="branch"):
   n=name
   p=re.compile('([[ ~^:?*]|\.\.)')
   n=p.sub('_', n)
-  if n[-1] == '/': n=n[:-1]+'_'
+  if n[-1] in ('/', '.'): n=n[:-1]+'_'
   n='/'.join(map(dot,n.split('/')))
   p=re.compile('_+')
   n=p.sub('_', n)
