@@ -102,7 +102,7 @@ def save_cache(filename,cache):
 def get_git_sha1(name,type='heads'):
   try:
     # use git-rev-parse to support packed refs
-    cmd="GIT_DIR='%s' git rev-parse --verify refs/%s/%s 2>/dev/null" % (os.getenv('GIT_DIR','/dev/null'),type,name)
+    cmd="git rev-parse --verify refs/%s/%s 2>%s" % (type,name,os.devnull)
     p=os.popen(cmd)
     l=p.readline()
     p.close()
