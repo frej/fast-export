@@ -3,7 +3,7 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-from mercurial import repo,hg,cmdutil,util,ui,revlog,node,templatefilters
+from mercurial import hg,util,ui,templatefilters
 import re
 import os
 import sys

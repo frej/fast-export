@@ -15,11 +15,11 @@ tags_path = '/tags/'
 first_rev = 1
 final_rev = 0
 
-import gc, sys, os.path
+import sys, os.path
 from optparse import OptionParser
-from time import sleep, mktime, localtime, strftime, strptime
-from svn.fs import svn_fs_dir_entries, svn_fs_file_length, svn_fs_file_contents, svn_fs_is_dir, svn_fs_revision_root, svn_fs_youngest_rev, svn_fs_revision_proplist, svn_fs_revision_prop, svn_fs_paths_changed
-from svn.core import svn_pool_create, svn_pool_clear, svn_pool_destroy, svn_stream_read, svn_stream_for_stdout, svn_stream_copy, svn_stream_close, run_app
+from time import mktime, strptime
+from svn.fs import svn_fs_file_length, svn_fs_file_contents, svn_fs_is_dir, svn_fs_revision_root, svn_fs_youngest_rev, svn_fs_revision_proplist, svn_fs_paths_changed
+from svn.core import svn_pool_create, svn_pool_clear, svn_pool_destroy, svn_stream_for_stdout, svn_stream_copy, svn_stream_close, run_app
 from svn.repos import svn_repos_open, svn_repos_fs
 
 ct_short = ['M', 'A', 'D', 'R', 'X']
