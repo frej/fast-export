@@ -3,7 +3,7 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: GPLv2
 
-from mercurial import repo,hg,cmdutil,util,ui,revlog,node
+from mercurial import node
 from hg2git import setup_repo,load_cache,get_changeset,get_git_sha1
 from optparse import OptionParser
 import sys
