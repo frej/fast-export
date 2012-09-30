@@ -11,6 +11,14 @@ import re
 import sys
 import os
 
+if sys.platform == "win32":
+  # On Windows, sys.stdout is initially opened in text mode, which means that
+  # when a LF (\n) character is written to sys.stdout, it will be converted
+  # into CRLF (\r\n).  That makes git blow up, so use this platform-specific
+  # code to change the mode of sys.stdout to binary.
+  import msvcrt
+  msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+
 # silly regex to catch Signed-off-by lines in log message
 sob_re=re.compile('^Signed-[Oo]ff-[Bb]y: (.+)$')
 # insert 'checkpoint' command after this many commits or none at all if 0
