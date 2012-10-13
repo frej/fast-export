@@ -67,6 +67,13 @@ on strictly linear ordering of changesets from hg, i.e. its
 append-only storage model so that changesets hg-fast-export already
 saw never get modified.
 
+Submitting Patches
+==================
+
+Please use the issue-tracker at github
+https://github.com/frej/fast-export to report bugs and submit
+patches.
+
 Footnotes
 =========
 
