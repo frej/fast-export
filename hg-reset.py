@@ -82,6 +82,8 @@ if __name__=='__main__':
 
   parser.add_option("--marks",dest="marksfile",
       help="File to read git-fast-import's marks from")
+  parser.add_option("--mapping",dest="mappingfile",
+      help="File to read last run's hg-to-git SHA1 mapping")
   parser.add_option("--heads",dest="headsfile",
       help="File to read last run's git heads from")
   parser.add_option("--status",dest="statusfile",
@@ -94,6 +96,7 @@ if __name__=='__main__':
   (options,args)=parser.parse_args()
 
   if options.marksfile==None: bail(parser,'--marks option')
+  if options.mappingfile==None: bail(parser,'--mapping option')
   if options.headsfile==None: bail(parser,'--heads option')
   if options.statusfile==None: bail(parser,'--status option')
   if options.repourl==None: bail(parser,'--repo option')
@@ -102,6 +105,7 @@ if __name__=='__main__':
   heads_cache=load_cache(options.headsfile)
   marks_cache=load_cache(options.marksfile,mangle_mark)
   state_cache=load_cache(options.statusfile)
+  mapping_cache = load_cache(options.mappingfile)
 
   l=int(state_cache.get('tip',options.revision))
   if options.revision+1>l:
