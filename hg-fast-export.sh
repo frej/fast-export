@@ -70,6 +70,11 @@ if [ x"$REPO" = x -a -f "$GIT_DIR/$PFX-$SFX_STATE" ] ; then
   echo "Using last hg repository \"$REPO\""
 fi
 
+if [  -z "$REPO" ]; then
+    echo "no repo given, use -r flag"
+    exit 1
+fi
+
 # make sure we have a marks cache
 if [ ! -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
   touch "$GIT_DIR/$PFX-$SFX_MARKS"
