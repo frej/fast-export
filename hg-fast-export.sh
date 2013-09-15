@@ -3,7 +3,9 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-set -o pipefail
+if [ -n "$BASH" ]; then
+    set -o pipefail
+fi
 
 ROOT="`dirname $0`"
 REPO=""
