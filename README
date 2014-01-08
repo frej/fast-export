@@ -45,8 +45,8 @@ Notes/Limitations
 =================
 
 hg-fast-export supports multiple branches but only named branches with
-exaclty one head each. Otherwise commits to the tip of these heads
-within branch will get flattened into merge commits.
+exactly one head each. Otherwise commits to the tip of these heads
+within the branch will get flattened into merge commits.
 
 As each git-fast-import run creates a new pack file, it may be
 required to repack the repository quite often for incremental imports
