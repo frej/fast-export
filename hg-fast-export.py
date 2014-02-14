@@ -268,8 +268,18 @@ def load_authors(filename):
   sys.stderr.write('Loaded %d authors\n' % l)
   return cache
 
+def branchtip(repo, heads):
+  '''return the tipmost branch head in heads'''
+  tip = heads[-1]
+  for h in reversed(heads):
+    if not repo[h].closesbranch():
+      tip = h
+      break
+  return tip
+
 def verify_heads(ui,repo,cache,force):
-  branches=repo.branchtags()
+  branches={bn: branchtip(repo, heads)
+            for bn, heads in repo.branchmap().iteritems()}
   l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
   l.sort()
 
