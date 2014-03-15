@@ -272,7 +272,7 @@ def branchtip(repo, heads):
   '''return the tipmost branch head in heads'''
   tip = heads[-1]
   for h in reversed(heads):
-    if not repo[h].closesbranch():
+    if 'close' not in repo.changelog.read(h)[5]:
       tip = h
       break
   return tip
