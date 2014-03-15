@@ -255,17 +255,22 @@ def load_authors(filename):
     return cache
   f=open(filename,'r')
   l=0
+  a=0
   lre=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
   for line in f.readlines():
     l+=1
+    line=line.strip()
+    if line=='' or line[0]=='#':
+      continue
     m=lre.match(line)
     if m==None:
       sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
       continue
     # put key:value in cache, key without ^:
     cache[m.group(1).strip()]=m.group(2).strip()
+    a+=1
   f.close()
-  sys.stderr.write('Loaded %d authors\n' % l)
+  sys.stderr.write('Loaded %d authors\n' % a)
   return cache
 
 def branchtip(repo, heads):
