@@ -182,12 +182,6 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags)
   wr(desc)
   wr()
 
-
-  # Sort the parents based on revision ids so that we always get the
-  # same resulting git repo, no matter how the revisions were
-  # numbered.
-  parents.sort(key=repo.changelog.node, reverse=True)
-
   ctx=repo.changectx(str(revision))
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
