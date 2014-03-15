@@ -81,14 +81,32 @@ fi
 # cleanup on exit
 trap 'rm -f "$GIT_DIR/$PFX-$SFX_MARKS.old" "$GIT_DIR/$PFX-$SFX_MARKS.tmp"' 0
 
-GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
-  --repo "$REPO" \
-  --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
-  --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
-  --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
-  --status "$GIT_DIR/$PFX-$SFX_STATE" \
-  "$@" \
-| git fast-import $GFI_OPTS --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" || exit 1
+_err1=
+_err2=
+exec 3>&1
+{ read -r _err1 || :; read -r _err2 || :; } <<-EOT
+$(
+  exec 4>&3 3>&1 1>&4 4>&-
+  {
+    _e1=0
+    GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
+      --repo "$REPO" \
+      --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
+      --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
+      --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
+      --status "$GIT_DIR/$PFX-$SFX_STATE" \
+      "$@" 3>&- || _e1=$?
+    echo $_e1 >&3
+  } | \
+  {
+    _e2=0
+    git fast-import $GFI_OPTS --export-marks="$GIT_DIR/$PFX-$SFX_MARKS.tmp" 3>&- || _e2=$?
+    echo $_e2 >&3
+  }
+)
+EOT
+exec 3>&-
+[ "$_err1" = 0 -a "$_err2" = 0 ] || exit 1
 
 # move recent marks cache out of the way...
 if [ -f "$GIT_DIR/$PFX-$SFX_MARKS" ] ; then
