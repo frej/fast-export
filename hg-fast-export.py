@@ -59,7 +59,7 @@ def split_dict(dleft,dright,l=[],c=[],r=[],match=file_mismatch):
     if right==None:
       # we have the file but our parent hasn't: add to left set
       l.append(left)
-    elif match(dleft[left],right):
+    elif match(dleft[left],right) or gitmode(dleft.flags(left))!=gitmode(dright.flags(left)):
       # we have it but checksums mismatch: add to center set
       c.append(left)
   for right in dright.keys():
