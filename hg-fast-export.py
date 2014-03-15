@@ -278,8 +278,9 @@ def branchtip(repo, heads):
   return tip
 
 def verify_heads(ui,repo,cache,force):
-  branches={bn: branchtip(repo, heads)
-            for bn, heads in repo.branchmap().iteritems()}
+  branches={}
+  for bn, heads in repo.branchmap().iteritems():
+    branches[bn] = branchtip(repo, heads)
   l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
   l.sort()
 
