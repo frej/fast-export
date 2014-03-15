@@ -3,7 +3,7 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-ROOT="`dirname $0`"
+ROOT="`dirname "$0"`"
 REPO=""
 PFX="hg2git"
 SFX_MAPPING="mapping"
@@ -21,19 +21,25 @@ GIT_DIR/$PFX-$SFX_STATE by default.
 Note: The argument order matters.
 
 Options:
-	-m       Maximum revision to import
-	--quiet  Passed to git-fast-import(1)
-	-s       Enable parsing Signed-off-by lines
-	--hgtags Enable exporting .hgtags files
-	-A       Read author map from file
-	         (Same as in git-svnimport(1) and git-cvsimport(1))
-	-r       Mercurial repository to import
-	-M       Set the default branch name (default to 'master')
-	-o       Use <name> as branch namespace to track upstream (eg 'origin')
-	--force  Ignore validation errors when converting, and pass --force
-	         to git-fast-import(1)
+	--quiet   Passed to git-fast-import(1)
+	-r <repo> Mercurial repository to import
+	--force   Ignore validation errors when converting, and pass --force
+	          to git-fast-import(1)
+	-m <max>  Maximum revision to import
+	-s        Enable parsing Signed-off-by lines
+	--hgtags  Enable exporting .hgtags files
+	-A <file> Read author map from file
+	          (Same as in git-svnimport(1) and git-cvsimport(1))
+	-M <name> Set the default branch name (defaults to 'master')
+	-o <name> Use <name> as branch namespace to track upstream (eg 'origin')
 "
-
+case "$1" in
+    -h|--help)
+      echo "usage: $(basename "$0") $USAGE"
+      echo ""
+      echo "$LONG_USAGE"
+      exit 0
+esac
 . "$(git --exec-path)/git-sh-setup"
 cd_to_toplevel
 
