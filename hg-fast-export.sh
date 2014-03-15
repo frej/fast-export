@@ -13,7 +13,7 @@ SFX_STATE="state"
 GFI_OPTS=""
 PYTHON=${PYTHON:-python}
 
-USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [-A <file>] [-M <name>] [-o <name>]"
+USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-M <name>] [-o <name>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
@@ -21,16 +21,17 @@ GIT_DIR/$PFX-$SFX_STATE by default.
 Note: The argument order matters.
 
 Options:
-	-m	Maximum revision to import
-	--quiet	Passed to git-fast-import(1)
-	-s	Enable parsing Signed-off-by lines
-	-A	Read author map from file
-		(Same as in git-svnimport(1) and git-cvsimport(1))
-	-r	Mercurial repository to import
-	-M	Set the default branch name (default to 'master')
-	-o	Use <name> as branch namespace to track upstream (eg 'origin')
-	--force Ignore validation errors when converting, and pass --force
-		to git-fast-import(1)
+	-m       Maximum revision to import
+	--quiet  Passed to git-fast-import(1)
+	-s       Enable parsing Signed-off-by lines
+	--hgtags Enable exporting .hgtags files
+	-A       Read author map from file
+	         (Same as in git-svnimport(1) and git-cvsimport(1))
+	-r       Mercurial repository to import
+	-M       Set the default branch name (default to 'master')
+	-o       Use <name> as branch namespace to track upstream (eg 'origin')
+	--force  Ignore validation errors when converting, and pass --force
+	         to git-fast-import(1)
 "
 
 . "$(git --exec-path)/git-sh-setup"

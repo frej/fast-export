@@ -119,12 +119,12 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files):
+def export_file_contents(ctx,manifest,files,hgtags):
   count=0
   max=len(files)
   for file in files:
     # Skip .hgtags files. They only get us in trouble.
-    if file == ".hgtags":
+    if not hgtags and file == ".hgtags":
       sys.stderr.write('Skip %s\n' % (file))
       continue
     d=ctx.filectx(file).data()
@@ -156,7 +156,7 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -218,8 +218,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap):
       (branch,type,revision+1,max,len(added),len(changed),len(removed)))
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added)
-  export_file_contents(ctx,man,changed)
+  export_file_contents(ctx,man,added,hgtags)
+  export_file_contents(ctx,man,changed,hgtags)
   wr()
 
   return checkpoint(count)
@@ -306,7 +306,7 @@ def verify_heads(ui,repo,cache,force):
 
   return True
 
-def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False):
+def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False):
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
@@ -337,7 +337,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
@@ -372,6 +372,8 @@ if __name__=='__main__':
       help="URL of repo to import")
   parser.add_option("-s",action="store_true",dest="sob",
       default=False,help="Enable parsing Signed-off-by lines")
+  parser.add_option("--hgtags",action="store_true",dest="hgtags",
+      default=False,help="Enable exporting .hgtags files")
   parser.add_option("-A","--authors",dest="authorfile",
       help="Read authormap from AUTHORFILE")
   parser.add_option("-f","--force",action="store_true",dest="force",
@@ -403,4 +405,4 @@ if __name__=='__main__':
     set_origin_name(options.origin_name)
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,options.headsfile,
-    options.statusfile,authors=a,sob=options.sob,force=options.force))
+    options.statusfile,authors=a,sob=options.sob,force=options.force,hgtags=options.hgtags))
