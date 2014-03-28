@@ -47,7 +47,7 @@ done
 
 # for convenience: get default repo from state file
 if [ x"$REPO" = x -a -f "$GIT_DIR/$PFX-$SFX_STATE" ] ; then
-  REPO="`egrep '^:repo ' "$GIT_DIR/$PFX-$SFX_STATE" | cut -d ' ' -f 2`"
+  REPO="`grep '^:repo ' "$GIT_DIR/$PFX-$SFX_STATE" | cut -d ' ' -f 2`"
   echo "Using last hg repository \"$REPO\""
 fi
 
