@@ -21,6 +21,8 @@ if sys.platform == "win32":
 
 # silly regex to catch Signed-off-by lines in log message
 sob_re=re.compile('^Signed-[Oo]ff-[Bb]y: (.+)$')
+sanitize_branch_re=re.compile('([[ ~^:?\\\\*]|\.\.)')
+underscores_re=re.compile('_+')
 # insert 'checkpoint' command after this many commits or none at all if 0
 cfg_checkpoint_count=0
 # write some progress message every this many file contents written
@@ -140,17 +142,17 @@ def export_file_contents(ctx,manifest,files,hgtags):
 def sanitize_name(name,what="branch"):
   """Sanitize input roughly according to git-check-ref-format(1)"""
 
-  def dot(name):
-    if name[0] == '.': return '_'+name[1:]
+  def dot(name):r
+    if name and name[0] == '.': return '_'+name[1:]
     return name
 
+  # bitbucket.org/hpk42/pytest contains a branch beginning with '/'
+  if name[0] == '/': name='_'+name[1:]
   n=name
-  p=re.compile('([[ ~^:?\\\\*]|\.\.)')
-  n=p.sub('_', n)
+  n=sanitize_branch_re.sub('_', n)
   if n[-1] in ('/', '.'): n=n[:-1]+'_'
   n='/'.join(map(dot,n.split('/')))
-  p=re.compile('_+')
-  n=p.sub('_', n)
+  n=underscores_re.sub('_', n)
 
   if n!=name:
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
