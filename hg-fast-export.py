@@ -29,9 +29,12 @@ cfg_export_boundary=1000
 def gitmode(flags):
   return 'l' in flags and '120000' or 'x' in flags and '100755' or '100644'
 
-def wr(msg=''):
+def wr_no_nl(msg=''):
   if msg:
     sys.stdout.write(msg)
+
+def wr(msg=''):
+  wr_no_nl(msg)
   sys.stdout.write('\n')
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
@@ -156,7 +159,7 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -216,8 +219,23 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags)
   export_file_contents(ctx,man,changed,hgtags)
   wr()
 
-  return checkpoint(count)
+  count=checkpoint(count)
+  count=generate_note(user,time,timezone,revision,ctx,count,notes)
+  return count
 
+def generate_note(user,time,timezone,revision,ctx,count,notes):
+  if not notes:
+    return count
+  wr('commit refs/notes/hg')
+  wr('committer %s %d %s' % (user,time,timezone))
+  wr('data 0')
+  wr('N inline :%d' % (revision+1))
+  hg_hash=ctx.hex()
+  wr('data %d' % (len(hg_hash)))
+  wr_no_nl(hg_hash)
+  wr()
+  return checkpoint(count)
+  
 def export_tags(ui,repo,old_marks,mapping_cache,count,authors):
   l=repo.tagslist()
   for tag,node in l:
@@ -305,7 +323,7 @@ def verify_heads(ui,repo,cache,force):
 
   return True
 
-def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False):
+def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False):
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
@@ -336,7 +354,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
@@ -381,6 +399,8 @@ if __name__=='__main__':
       help="Set the default branch")
   parser.add_option("-o","--origin",dest="origin_name",
       help="use <name> as namespace to track upstream")
+  parser.add_option("--hg-hash",action="store_true",dest="notes",
+      default=False,help="Annotate commits with the hg hash as git notes in the hg namespace")
 
   (options,args)=parser.parse_args()
 
@@ -404,4 +424,4 @@ if __name__=='__main__':
     set_origin_name(options.origin_name)
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,options.headsfile,
-    options.statusfile,authors=a,sob=options.sob,force=options.force,hgtags=options.hgtags))
+    options.statusfile,authors=a,sob=options.sob,force=options.force,hgtags=options.hgtags,notes=options.notes))

@@ -13,7 +13,7 @@ SFX_STATE="state"
 GFI_OPTS=""
 PYTHON=${PYTHON:-python}
 
-USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-M <name>] [-o <name>]"
+USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-M <name>] [-o <name>] [--hg-hash]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
@@ -32,6 +32,8 @@ Options:
 	          (Same as in git-svnimport(1) and git-cvsimport(1))
 	-M <name> Set the default branch name (defaults to 'master')
 	-o <name> Use <name> as branch namespace to track upstream (eg 'origin')
+	--hg-hash Annotate commits with the hg hash as git notes in the
+                  hg namespace.
 "
 case "$1" in
     -h|--help)
