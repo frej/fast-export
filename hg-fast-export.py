@@ -29,9 +29,12 @@ cfg_export_boundary=1000
 def gitmode(flags):
   return 'l' in flags and '120000' or 'x' in flags and '100755' or '100644'
 
-def wr(msg=''):
+def wr_no_nl(msg=''):
   if msg:
     sys.stdout.write(msg)
+
+def wr(msg=''):
+  wr_no_nl(msg)
   sys.stdout.write('\n')
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
@@ -172,8 +175,6 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,
 
   if len(parents)==0 and revision != 0:
     wr('reset refs/heads/%s' % branch)
-    if notes:
-      wr('reset refs/notes/hg')
 
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
@@ -230,8 +231,8 @@ def generate_note(user,time,timezone,revision,ctx,count,notes):
   wr('data 0')
   wr('N inline :%d' % (revision+1))
   hg_hash=ctx.hex()
-  wr('data %d' % (len(hg_hash)+1))
-  wr(hg_hash)
+  wr('data %d' % (len(hg_hash)))
+  wr_no_nl(hg_hash)
   wr()
   return checkpoint(count)
   
