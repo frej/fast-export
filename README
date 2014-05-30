@@ -20,6 +20,10 @@ Using hg-fast-export is quite simple for a mercurial repository <repo>:
   git init
   hg-fast-export.sh -r <repo>
 
+Please note that hg-fast-export does not automatically check out the
+newly imported repository. You probably want to follow up the import
+with a "git checkout"-command.
+
 Incremental imports to track hg repos is supported, too.
 
 Using hg-reset it is quite simple within a git repository that is
