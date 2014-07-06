@@ -131,7 +131,7 @@ cat "$GIT_DIR/$PFX-$SFX_MARKS.old" "$GIT_DIR/$PFX-$SFX_MARKS.tmp" \
 # save SHA1s of current heads for incremental imports
 # and connectivity (plus sanity checking)
 for head in `git branch | sed 's#^..##'` ; do
-  id="`git rev-parse $head`"
+  id="`git rev-parse refs/heads/$head`"
   echo ":$head $id"
 done > "$GIT_DIR/$PFX-$SFX_HEADS"
 
