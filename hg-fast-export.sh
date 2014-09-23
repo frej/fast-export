@@ -3,7 +3,7 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-ROOT="`dirname "$(type -p $0)"`"
+ROOT="$(dirname "$(which "$0")")"
 REPO=""
 PFX="hg2git"
 SFX_MAPPING="mapping"
