@@ -137,5 +137,19 @@ for head in `git branch | sed 's#^..##'` ; do
   echo ":$head $id"
 done > "$GIT_DIR/$PFX-$SFX_HEADS"
 
+# create mapping file from hg revision to git revision
+sed 's/^://g' .git/hg2git-mapping | awk '{print ":"$2" "$1}' | sort | sed 's/[0-9]* //g' > .git/mappingsTemp
+sort .git/hg2git-marks | sed 's/^:[0-9]* //g' > .git/marksTemp
+paste -d ' ' .git/mappingsTemp .git/marksTemp > $GIT_DIR/$PFX-revisions
+rm  .git/mappingsTemp .git/marksTemp
+
 # check diff with color:
 # ( for i in `find . -type f | grep -v '\.git'` ; do diff -u $i $REPO/$i ; done | cdiff ) | less -r
+
+echo
+echo "Checkout your repo using"
+echo "git checkout HEAD"
+echo
+echo "If this repositor contains submodules, then initialize and update the submodules with the following commands."
+echo "git submodule init"
+echo "git submodule update"

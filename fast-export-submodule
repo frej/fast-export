@@ -1,0 +1,20 @@
+blob
+mark :1
+data 81
+[submodule "parent"]
+	path = parent
+	url = git@scm.apogeum.at:apogeum/parent.git
+
+reset refs/heads/master
+commit refs/heads/master
+mark :2
+author Stephan Bechter <stephan@apogeum.at> 1413745181 +0200
+committer Stephan Bechter <stephan@apogeum.at> 1413745181 +0200
+data 16
+added submodule
+M 100644 :1 .gitmodules
+M 160000 1fae593d9567113137921d6baa47da6de6b3a0e2 parent
+
+reset refs/heads/master
+from :2
+

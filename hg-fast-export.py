@@ -7,6 +7,7 @@ from mercurial import node
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
+from git import Repo
 import re
 import sys
 import os
@@ -25,6 +26,8 @@ sob_re=re.compile('^Signed-[Oo]ff-[Bb]y: (.+)$')
 cfg_checkpoint_count=0
 # write some progress message every this many file contents written
 cfg_export_boundary=1000
+
+subrepo_cache = {}
 
 def gitmode(flags):
   return 'l' in flags and '120000' or 'x' in flags and '100755' or '100644'
@@ -122,10 +125,38 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
+def export_file_contents(ctx,manifest,files,hgtags,encoding='',repourl,revnode):
   count=0
   max=len(files)
   for file in files:
+    # create submodule file istead of .hgsubstate file
+    if ctx.substate and file == ".hgsubstate":
+      smContent=""
+      for name in ctx.substate:
+        subRepoDir=ctx.substate[name][0]
+        linkFileName=repourl+"/"+name+"/.hg/link2git"
+        if (os.path.isfile(linkFileName)):
+          gitRepoLocation=open(linkFileName, "r").read()
+          if not name in subrepo_cache:
+            subrepo_cache[name] = load_cache(gitRepoLocation+"/hg2git-revisions")
+          gitRepo = Repo(gitRepoLocation)
+          smContent += '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name, name, gitRepo.remotes.origin.url)
+      wr('M 100644 inline .gitmodules')
+      wr('data %d' % (len(smContent)+1))
+      wr(smContent)
+      # read .hgsubstate file
+      data = ctx.filectx(file).data()
+      subHashes = {}
+      for line in data.split('\n'):
+        if line.strip() == "":
+          continue
+        cols= line.split(' ')
+        subHashes[cols[1]]=cols[0]
+      for name in ctx.substate:
+        if subHashes[name] in subrepo_cache[name]:
+          gitSha = subrepo_cache[name][subHashes[name]]
+          wr('M 160000 %s %s' % (gitSha, name))
+      continue
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == ".hgtags":
       sys.stderr.write('Skip %s\n' % (file))
@@ -151,19 +182,25 @@ def sanitize_name(name,what="branch"):
     if name[0] == '.': return '_'+name[1:]
     return name
 
-  n=name
+  validPatternString='^[^0-9\/\.\(\)_-]*([a-zA-Z0-9\/\.\(\)_-]*)'
+  validPattern=re.compile(validPatternString)
+  n=name.replace(" ", "_").replace("(", "").replace(")", "")
   p=re.compile('([[ ~^:?\\\\*]|\.\.)')
   n=p.sub('_', n)
   if n[-1] in ('/', '.'): n=n[:-1]+'_'
   n='/'.join(map(dot,n.split('/')))
   p=re.compile('_+')
   n=p.sub('_', n)
-
+  sys.stderr.write('Branch name: [%s]\n' % (n))
+  valid = re.match(validPattern, n)
+  if not valid:
+    sys.stderr.write('Warning: %s [%s] dont match [%s]\n' % (what,name,validPatternString))
+    n=valid.group(1)
   if n!=name:
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,encoding=''):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,encoding='',repourl):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -222,8 +259,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,
     removed=[r.decode(encoding).encode('utf8') for r in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,encoding)
-  export_file_contents(ctx,man,changed,hgtags,encoding)
+  export_file_contents(ctx,man,added,hgtags,encoding,repourl,revnode)
+  export_file_contents(ctx,man,changed,hgtags,encoding,repourl,revnode)
   wr()
 
   count=checkpoint(count)
@@ -330,6 +367,23 @@ def verify_heads(ui,repo,cache,force):
 
   return True
 
+def verify_subrepo(repourl, ctx, subRepoWarnings):
+    for key in ctx.substate:
+        subRepoDir=ctx.substate[key][0]
+        subRepoType=ctx.substate[key][2]
+        linkFileName=repourl+"/"+key+"/.hg/link2git"
+        if (subRepoType == "hg" and not os.path.isfile(linkFileName) and not key in subRepoWarnings):
+            subRepoWarnings[key]="ERROR: Repository has not converted subrepo in directory '%s'. \n    First convert sub repository and use %s for the -r parameter!\n" % (key, repourl+"/"+key)
+        if (subRepoType == "hg" and os.path.isfile(linkFileName)):
+            gitRepoLocation=open(linkFileName, "r").read()
+            gitRepo = Repo(gitRepoLocation)
+            if not gitRepo.remotes and not key+"_remote" in subRepoWarnings:
+                subRepoWarnings[key+"_remote"]="ERROR: Sub repo '%s' has no origin remote url!" % key
+                continue
+            if gitRepo.remotes and not gitRepo.remotes.origin:
+                subRepoWarnings[key+"_remote"]="ERROR: Sub repo '%s' has no origin remote url!" % key
+    return subRepoWarnings
+
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,encoding=''):
   _max=int(m)
 
@@ -353,15 +407,26 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   if _max<0 or max>tip:
     max=tip
 
+  subRepoWarnings = {}
   for rev in range(0,max):
-  	(revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
-  	mapping_cache[revnode.encode('hex_codec')] = str(rev)
+    # check if repository uses unconverted subrepos
+    ctx=repo.changectx(str(rev))
 
+    if (ctx.substate):
+      subRepoWarnings=verify_subrepo(repourl, ctx, subRepoWarnings)
+    (revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
+    mapping_cache[revnode.encode('hex_codec')] = str(rev)
 
+  if subRepoWarnings:
+    sys.stderr.write("\n")
+    for key in subRepoWarnings.keys():
+      sys.stderr.write(subRepoWarnings[key])
+    sys.stderr.write("\n")
+    return 1
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,encoding)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,encoding,repourl)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
@@ -421,6 +486,11 @@ if __name__=='__main__':
   if options.headsfile==None: bail(parser,'--heads')
   if options.statusfile==None: bail(parser,'--status')
   if options.repourl==None: bail(parser,'--repo')
+
+  # create file containing dirextory of converted git repository (used to get git revision if this repo is used as a subrepo in other repository)
+  linkFile = open(options.repourl + "/.hg/link2git", "w+")
+  linkFile.write(options.statusfile.replace("/hg2git-state", ""))
+  linkFile.close()
 
   a={}
   if options.authorfile!=None:
