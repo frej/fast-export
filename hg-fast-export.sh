@@ -34,7 +34,8 @@ Options:
 	-o <name> Use <name> as branch namespace to track upstream (eg 'origin')
 	--hg-hash Annotate commits with the hg hash as git notes in the
                   hg namespace.
-	-e <cp>   Mercurial encoding
+	-e <cp>   Assume commit and author strings retreived from 
+	          Mercurial are encoded in
 "
 case "$1" in
     -h|--help)
