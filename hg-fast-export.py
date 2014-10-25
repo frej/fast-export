@@ -159,7 +159,7 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,codepage=''):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,encoding=''):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -167,7 +167,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,
     brmap[name]=n
     return n
 
-  (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors,codepage)
+  (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors,encoding)
 
   branch=get_branchname(branch)
 
@@ -323,7 +323,7 @@ def verify_heads(ui,repo,cache,force):
 
   return True
 
-def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,codepage=''):
+def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,encoding=''):
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
@@ -354,7 +354,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,codepage)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,encoding)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
@@ -401,7 +401,8 @@ if __name__=='__main__':
       help="use <name> as namespace to track upstream")
   parser.add_option("--hg-hash",action="store_true",dest="notes",
       default=False,help="Annotate commits with the hg hash as git notes in the hg namespace")
-  parser.add_option("-e",dest="cp",help="Mercurial encoding")
+  parser.add_option("-e",dest="cp",
+      help="Assume commit and author strings retreived from Mercurial are encoded in")
 
   (options,args)=parser.parse_args()
 
@@ -429,4 +430,4 @@ if __name__=='__main__':
     cp=options.cp
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,options.headsfile,
-    options.statusfile,authors=a,sob=options.sob,force=options.force,hgtags=options.hgtags,notes=options.notes,codepage=cp))
+    options.statusfile,authors=a,sob=options.sob,force=options.force,hgtags=options.hgtags,notes=options.notes,encoding=cp))
