@@ -402,7 +402,7 @@ if __name__=='__main__':
   parser.add_option("--hg-hash",action="store_true",dest="notes",
       default=False,help="Annotate commits with the hg hash as git notes in the hg namespace")
   parser.add_option("-e",dest="cp",
-      help="Assume commit and author strings retreived from Mercurial are encoded in")
+      help="Assume commit and author strings retrieved from Mercurial are encoded in <encoding>")
 
   (options,args)=parser.parse_args()
 
