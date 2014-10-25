@@ -401,6 +401,7 @@ if __name__=='__main__':
       help="use <name> as namespace to track upstream")
   parser.add_option("--hg-hash",action="store_true",dest="notes",
       default=False,help="Annotate commits with the hg hash as git notes in the hg namespace")
+  parser.add_option("-e",dest="cp",help="Mercurial encoding")
 
   (options,args)=parser.parse_args()
 
