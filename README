@@ -34,6 +34,11 @@ hg-fast-export'ed from mercurial:
 will give hints on which branches need adjustment for starting over
 again.
 
+When a mercurial repository does not use utf-8 for encoding author
+strings and commit messages the "-e <encoding>" command line option
+can be used to force fast-export to convert incoming meta data from
+<encoding> to utf-8.
+
 As mercurial appears to be much less picky about the syntax of the
 author information than git, an author mapping file can be given to
 hg-fast-export to fix up malformed author strings. The file is
