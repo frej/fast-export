@@ -122,7 +122,7 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files,hgtags):
+def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
   count=0
   max=len(files)
   for file in files:
@@ -131,7 +131,11 @@ def export_file_contents(ctx,manifest,files,hgtags):
       sys.stderr.write('Skip %s\n' % (file))
       continue
     d=ctx.filectx(file).data()
-    wr('M %s inline %s' % (gitmode(manifest.flags(file)),file))
+    if encoding:
+      filename=file.decode(encoding).encode('utf8')
+    else:
+      filename=file
+    wr('M %s inline %s' % (gitmode(manifest.flags(file)),filename))
     wr('data %d' % len(d)) # had some trouble with size()
     wr(d)
     count+=1
@@ -214,9 +218,12 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,
   sys.stderr.write('%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
       (branch,type,revision+1,max,len(added),len(changed),len(removed)))
 
+  if encoding:
+    removed=[r.decode(encoding).encode('utf8') for r in removed]
+
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags)
-  export_file_contents(ctx,man,changed,hgtags)
+  export_file_contents(ctx,man,added,hgtags,encoding)
+  export_file_contents(ctx,man,changed,hgtags,encoding)
   wr()
 
   count=checkpoint(count)
