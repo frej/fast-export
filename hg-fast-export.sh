@@ -3,7 +3,11 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-ROOT="$(dirname "$(which "$0")")"
+# full path to script
+SCRIPT="$(which "$0")"
+# replace all "\" with "/"
+SCRIPT="${SCRIPT//\\//}"
+ROOT="$(dirname "$SCRIPT")"
 REPO=""
 PFX="hg2git"
 SFX_MAPPING="mapping"
