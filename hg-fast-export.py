@@ -125,7 +125,7 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files,hgtags,encoding='',repourl,revnode):
+def export_file_contents(ctx,manifest,files,hgtags,repourl,revnode,encoding=''):
   count=0
   max=len(files)
   for file in files:
@@ -200,7 +200,7 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,encoding='',repourl):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,repourl,encoding=''):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -259,8 +259,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,
     removed=[r.decode(encoding).encode('utf8') for r in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,encoding,repourl,revnode)
-  export_file_contents(ctx,man,changed,hgtags,encoding,repourl,revnode)
+  export_file_contents(ctx,man,added,hgtags,repourl,revnode,encoding)
+  export_file_contents(ctx,man,changed,hgtags,repourl,revnode,encoding)
   wr()
 
   count=checkpoint(count)
@@ -426,7 +426,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,encoding,repourl)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,repourl,encoding)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
