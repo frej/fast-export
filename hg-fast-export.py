@@ -125,12 +125,12 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files,hgtags,repourl,revnode,encoding=''):
+def export_file_contents(ctx,manifest,files,hgtags,repourl,revnode,ignoreSub,encoding=''):
   count=0
   max=len(files)
   for file in files:
     # create submodule file istead of .hgsubstate file
-    if ctx.substate and file == ".hgsubstate":
+    if not ignoreSub and ctx.substate and file == ".hgsubstate":
       smContent=""
       for name in ctx.substate:
         subRepoDir=ctx.substate[name][0]
@@ -200,7 +200,7 @@ def sanitize_name(name,what="branch"):
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,repourl,encoding=''):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,repourl,ignoreSub,encoding=''):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -259,8 +259,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,
     removed=[r.decode(encoding).encode('utf8') for r in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,repourl,revnode,encoding)
-  export_file_contents(ctx,man,changed,hgtags,repourl,revnode,encoding)
+  export_file_contents(ctx,man,added,hgtags,repourl,revnode,ignoreSub, encoding)
+  export_file_contents(ctx,man,changed,hgtags,repourl,revnode,ignoreSub, encoding)
   wr()
 
   count=checkpoint(count)
@@ -384,7 +384,7 @@ def verify_subrepo(repourl, ctx, subRepoWarnings):
                 subRepoWarnings[key+"_remote"]="ERROR: Sub repo '%s' has no origin remote url!" % key
     return subRepoWarnings
 
-def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,encoding=''):
+def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,ignoreSub=False, encoding=''):
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
@@ -409,11 +409,11 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
 
   subRepoWarnings = {}
   for rev in range(0,max):
-    # check if repository uses unconverted subrepos
-    ctx=repo.changectx(str(rev))
-
-    if (ctx.substate):
-      subRepoWarnings=verify_subrepo(repourl, ctx, subRepoWarnings)
+    if not ignoreSub:
+      # check if repository uses unconverted subrepos
+      ctx=repo.changectx(str(rev))
+      if (ctx.substate):
+        subRepoWarnings=verify_subrepo(repourl, ctx, subRepoWarnings)
     (revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
     mapping_cache[revnode.encode('hex_codec')] = str(rev)
 
@@ -426,7 +426,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,repourl,encoding)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,repourl,ignoreSub,encoding)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
@@ -475,7 +475,8 @@ if __name__=='__main__':
       default=False,help="Annotate commits with the hg hash as git notes in the hg namespace")
   parser.add_option("-e",dest="encoding",
       help="Assume commit and author strings retrieved from Mercurial are encoded in <encoding>")
-
+  parser.add_option("--ignore-subrepos",action="store_true",dest="ignore_subrepos",
+      default=False,help="Ignore sub repositories")
   (options,args)=parser.parse_args()
 
   m=-1
@@ -509,4 +510,4 @@ if __name__=='__main__':
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
                   options.headsfile, options.statusfile,authors=a,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,encoding=encoding))
+                  notes=options.notes,ignoreSub=options.ignore_subrepos, encoding=encoding))
