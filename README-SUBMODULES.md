@@ -23,6 +23,11 @@ E.g. if you main repo is in directory `/srv/projects/hg-main-repo` and the sub
 directory `subrepo` is a subrepo of your main repository then convert the whole
 repo with...
 
+### Optional usefull parameters
+* ```--ignore-subrepos```: If the repository contains subrepos, ignore it -> ends in empty sub repo directories.
+This is useful if you had subrepos but not actual and dont care about the history.
+* ```--fix-branchnames```: If the branch name contains strange characters - remove it
+
 ### Sub repository
 
     cd /srv/projects
