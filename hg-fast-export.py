@@ -175,15 +175,13 @@ def export_file_contents(ctx,manifest,files,hgtags,repourl,revnode,ignoreSub,enc
   if max>cfg_export_boundary:
     sys.stderr.write('Exported %d/%d files\n' % (count,max))
 
-def sanitize_name(name,what="branch"):
+def sanitize_name(name,fixBranch,what="branch"):
   """Sanitize input roughly according to git-check-ref-format(1)"""
 
   def dot(name):
     if name[0] == '.': return '_'+name[1:]
     return name
 
-  validPatternString='^[^0-9\/\.\(\)_-]*([a-zA-Z0-9\/\.\(\)_-]*)'
-  validPattern=re.compile(validPatternString)
   n=name.replace(" ", "_").replace("(", "").replace(")", "")
   p=re.compile('([[ ~^:?\\\\*]|\.\.)')
   n=p.sub('_', n)
@@ -192,25 +190,31 @@ def sanitize_name(name,what="branch"):
   p=re.compile('_+')
   n=p.sub('_', n)
   sys.stderr.write('Branch name: [%s]\n' % (n))
-  valid = re.match(validPattern, n)
-  if not valid:
-    sys.stderr.write('Warning: %s [%s] dont match [%s]\n' % (what,name,validPatternString))
-    n=valid.group(1)
   if n!=name:
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
+
+  validCharacters = "[^0-9a-zA-Z\/\.\(\)_-]"
+  changed = re.sub(validCharacters, "", n)
+  if changed != n:
+    sys.stderr.write('Warning: Found invalid characters in branch name %s - [%s|%s]' % (what,name,changed))
+    if fixBranch:
+      n = changed
+      sys.stderr.write(" - changed branch name")
+    else:
+      sys.stderr.write(" - not changing (use --fix-branchnames to change name)")
   return n
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,repourl,ignoreSub,encoding=''):
-  def get_branchname(name):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,repourl,ignoreSub,fixBranch,encoding=''):
+  def get_branchname(name,fixBranch):
     if brmap.has_key(name):
       return brmap[name]
-    n=sanitize_name(name)
+    n=sanitize_name(name,fixBranch)
     brmap[name]=n
     return n
 
   (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors,encoding)
 
-  branch=get_branchname(branch)
+  branch=get_branchname(branch,fixBranch)
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
 
@@ -384,7 +388,7 @@ def verify_subrepo(repourl, ctx, subRepoWarnings):
                 subRepoWarnings[key+"_remote"]="ERROR: Sub repo '%s' has no origin remote url!" % key
     return subRepoWarnings
 
-def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,ignoreSub=False, encoding=''):
+def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,ignoreSub=False,fixBranch=False,encoding=''):
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
@@ -426,7 +430,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,repourl,ignoreSub,encoding)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,repourl,ignoreSub,fixBranch,encoding)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
@@ -477,6 +481,8 @@ if __name__=='__main__':
       help="Assume commit and author strings retrieved from Mercurial are encoded in <encoding>")
   parser.add_option("--ignore-subrepos",action="store_true",dest="ignore_subrepos",
       default=False,help="Ignore sub repositories")
+  parser.add_option("--fix-branchnames",action="store_true",dest="fix_branchnames",
+      default=False,help="Fix invalid branch names (removes invalid characters)")
   (options,args)=parser.parse_args()
 
   m=-1
@@ -510,4 +516,5 @@ if __name__=='__main__':
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
                   options.headsfile, options.statusfile,authors=a,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,ignoreSub=options.ignore_subrepos, encoding=encoding))
+                  notes=options.notes,ignoreSub=options.ignore_subrepos, fixBranch=options.fix_branchnames,
+                  encoding=encoding))
