@@ -13,7 +13,7 @@ SFX_STATE="state"
 GFI_OPTS=""
 PYTHON=${PYTHON:-python}
 
-USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
+USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>] [--ignore-subrepos]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
@@ -34,8 +34,10 @@ Options:
 	-o <name> Use <name> as branch namespace to track upstream (eg 'origin')
 	--hg-hash Annotate commits with the hg hash as git notes in the
                   hg namespace.
-	-e <encoding> Assume commit and author strings retrieved from 
+	-e <encoding> Assume commit and author strings retrieved from
 	              Mercurial are encoded in <encoding>
+	--ignore-subrepos   Ignore sub repositories, and pass --force
+	          to hg-fast-export(1)
 "
 case "$1" in
     -h|--help)
@@ -137,5 +139,19 @@ for head in `git branch | sed 's#^..##'` ; do
   echo ":$head $id"
 done > "$GIT_DIR/$PFX-$SFX_HEADS"
 
+# create mapping file from hg revision to git revision
+sed 's/^://g' .git/hg2git-mapping | awk '{print ":"$2" "$1}' | sort | sed 's/[0-9]* //g' > .git/mappingsTemp
+sort .git/hg2git-marks | sed 's/^:[0-9]* //g' > .git/marksTemp
+paste -d ' ' .git/mappingsTemp .git/marksTemp > $GIT_DIR/$PFX-revisions
+rm  .git/mappingsTemp .git/marksTemp
+
 # check diff with color:
 # ( for i in `find . -type f | grep -v '\.git'` ; do diff -u $i $REPO/$i ; done | cdiff ) | less -r
+
+echo
+echo "Checkout your repo using"
+echo "git checkout HEAD"
+echo
+echo "If this repositor contains submodules, then initialize and update the submodules with the following commands."
+echo "git submodule init"
+echo "git submodule update"
