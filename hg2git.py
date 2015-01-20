@@ -52,6 +52,14 @@ def fixup_user(user,authors):
     # if we have 'Name <mail>' syntax, everything is fine :)
     name,mail=m.group(1),m.group(2)
 
+
+  # remove duplicated < or > - this causes fatals
+  double_ltgt = ['<<', '>>']
+
+  for dupe in double_ltgt:
+    if dupe in mail:
+      mail.replace(dupe, dupe[0])
+
   # remove any silly quoting from username
   m2=user_clean_re.match(name)
   if m2!=None:
