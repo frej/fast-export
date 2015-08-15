@@ -135,7 +135,8 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
       filename=file.decode(encoding).encode('utf8')
     else:
       filename=file
-    wr('M %s inline %s' % (gitmode(manifest.flags(file)),filename))
+    wr('M %s inline %s' % (gitmode(manifest.flags(file)),
+                           strip_leading_slash(filename)))
     wr('data %d' % len(d)) # had some trouble with size()
     wr(d)
     count+=1
@@ -162,6 +163,11 @@ def sanitize_name(name,what="branch"):
   if n!=name:
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
   return n
+
+def strip_leading_slash(filename):
+  if filename[0] == '/':
+    return filename[1:]
+  return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,encoding=''):
   def get_branchname(name):
@@ -220,6 +226,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,
 
   if encoding:
     removed=[r.decode(encoding).encode('utf8') for r in removed]
+
+  removed=[strip_leading_slash(x) for x in removed]
 
   map(lambda r: wr('D %s' % r),removed)
   export_file_contents(ctx,man,added,hgtags,encoding)
