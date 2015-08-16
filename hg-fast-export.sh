@@ -13,7 +13,7 @@ SFX_STATE="state"
 GFI_OPTS=""
 PYTHON=${PYTHON:-python}
 
-USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
+USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
@@ -30,6 +30,8 @@ Options:
 	--hgtags  Enable exporting .hgtags files
 	-A <file> Read author map from file
 	          (Same as in git-svnimport(1) and git-cvsimport(1))
+	-B <file> Read branch map from file
+	-T <file> Read tags map from file
 	-M <name> Set the default branch name (defaults to 'master')
 	-o <name> Use <name> as branch namespace to track upstream (eg 'origin')
 	--hg-hash Annotate commits with the hg hash as git notes in the

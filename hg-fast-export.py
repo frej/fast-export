@@ -169,11 +169,12 @@ def strip_leading_slash(filename):
     return filename[1:]
   return filename
 
-def export_commit(ui,repo,revision,old_marks,max,count,authors,sob,brmap,hgtags,notes,encoding=''):
+def export_commit(ui,repo,revision,old_marks,max,count,authors,
+                  branchesmap,sob,brmap,hgtags,notes,encoding=''):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
-    n=sanitize_name(name)
+    n=sanitize_name(branchesmap.get(name,name))
     brmap[name]=n
     return n
 
@@ -251,10 +252,11 @@ def generate_note(user,time,timezone,revision,ctx,count,notes):
   wr()
   return checkpoint(count)
   
-def export_tags(ui,repo,old_marks,mapping_cache,count,authors):
+def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
   l=repo.tagslist()
   for tag,node in l:
-    tag=sanitize_name(tag,"tag")
+    # Remap the branch name
+    tag=sanitize_name(tagsmap.get(tag,tag),"tag")
     # ignore latest revision
     if tag=='tip': continue
     # ignore tags to nodes that are missing (ie, 'in the future')
@@ -338,7 +340,9 @@ def verify_heads(ui,repo,cache,force):
 
   return True
 
-def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=False,force=False,hgtags=False,notes=False,encoding=''):
+def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
+           authors={},branchesmap={},tagsmap={},
+           sob=False,force=False,hgtags=False,notes=False,encoding=''):
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
@@ -369,14 +373,15 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,authors={},sob=Fals
   c=0
   brmap={}
   for rev in range(min,max):
-    c=export_commit(ui,repo,rev,old_marks,max,c,authors,sob,brmap,hgtags,notes,encoding)
+    c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
+                    sob,brmap,hgtags,notes,encoding)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
   save_cache(tipfile,state_cache)
   save_cache(mappingfile,mapping_cache)
 
-  c=export_tags(ui,repo,old_marks,mapping_cache,c,authors)
+  c=export_tags(ui,repo,old_marks,mapping_cache,c,authors,tagsmap)
 
   sys.stderr.write('Issued %d commands\n' % c)
 
@@ -408,6 +413,10 @@ if __name__=='__main__':
       default=False,help="Enable exporting .hgtags files")
   parser.add_option("-A","--authors",dest="authorfile",
       help="Read authormap from AUTHORFILE")
+  parser.add_option("-B","--branches",dest="branchesfile",
+      help="Read branch map from BRANCHESFILE")
+  parser.add_option("-T","--tags",dest="tagsfile",
+      help="Read tags map from TAGSFILE")
   parser.add_option("-f","--force",action="store_true",dest="force",
       default=False,help="Ignore validation errors by force")
   parser.add_option("-M","--default-branch",dest="default_branch",
@@ -434,6 +443,14 @@ if __name__=='__main__':
   if options.authorfile!=None:
     a=load_mapping('authors', options.authorfile)
 
+  b={}
+  if options.branchesfile!=None:
+    b=load_mapping('branches', options.branchesfile)
+
+  t={}
+  if options.tagsfile!=None:
+    t=load_mapping('tags', options.tagsfile)
+
   if options.default_branch!=None:
     set_default_branch(options.default_branch)
 
@@ -445,6 +462,7 @@ if __name__=='__main__':
     encoding=options.encoding
 
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
-                  options.headsfile, options.statusfile,authors=a,
+                  options.headsfile, options.statusfile,
+                  authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
                   notes=options.notes,encoding=encoding))

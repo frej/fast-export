@@ -50,6 +50,14 @@ translate "User <garbage<user@example.com>" to "User <user@example.com>".
 User <garbage<user@example.com>=User <user@example.com>
 -- End of authors.map --
 
+Tag and Branch Naming
+=====================
+
+As Git and Mercurial have differ in what is a valid branch and tag
+name the -B and -T options allow a mapping file to be specified to
+rename branches and tags (respectively). The syntax of the mapping
+file is the same as for the author mapping.
+
 Notes/Limitations
 =================
 
