@@ -276,7 +276,7 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors):
     count=checkpoint(count)
   return count
 
-def load_authors(filename):
+def load_mapping(name, filename):
   cache={}
   if not os.path.exists(filename):
     return cache
@@ -297,7 +297,7 @@ def load_authors(filename):
     cache[m.group(1).strip()]=m.group(2).strip()
     a+=1
   f.close()
-  sys.stderr.write('Loaded %d authors\n' % a)
+  sys.stderr.write('Loaded %d %s\n' % (a, name))
   return cache
 
 def branchtip(repo, heads):
@@ -432,7 +432,7 @@ if __name__=='__main__':
 
   a={}
   if options.authorfile!=None:
-    a=load_authors(options.authorfile)
+    a=load_mapping('authors', options.authorfile)
 
   if options.default_branch!=None:
     set_default_branch(options.default_branch)
