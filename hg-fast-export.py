@@ -152,7 +152,7 @@ def sanitize_name(name,what="branch"):
     try:
       if name == "":
         name = "NULL"
-        sys.stderr.write("WARNING empty name !!!!\n")
+        sys.stderr.write("WARNING empty name\n")
       elif name[0] == '.': return '_'+name[1:]
     except:
       sys.stderr.write("WARNING something very wrong with " + name)
