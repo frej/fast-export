@@ -170,7 +170,7 @@ def strip_leading_slash(filename):
   return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
-                  branchesmap,sob,brmap,hgtags,notes,encoding=''):
+                  branchesmap,sob,brmap,hgtags,notes,encoding='',fn_encoding=''):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -225,14 +225,14 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   sys.stderr.write('%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
       (branch,type,revision+1,max,len(added),len(changed),len(removed)))
 
-  if encoding:
-    removed=[r.decode(encoding).encode('utf8') for r in removed]
+  if fn_encoding:
+    removed=[r.decode(fn_encoding).encode('utf8') for r in removed]
 
   removed=[strip_leading_slash(x) for x in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,encoding)
-  export_file_contents(ctx,man,changed,hgtags,encoding)
+  export_file_contents(ctx,man,added,hgtags,fn_encoding)
+  export_file_contents(ctx,man,changed,hgtags,fn_encoding)
   wr()
 
   count=checkpoint(count)
@@ -342,7 +342,7 @@ def verify_heads(ui,repo,cache,force):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding=''):
+           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding=''):
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
@@ -374,7 +374,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,notes,encoding)
+                    sob,brmap,hgtags,notes,encoding,fn_encoding)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
@@ -427,6 +427,8 @@ if __name__=='__main__':
       default=False,help="Annotate commits with the hg hash as git notes in the hg namespace")
   parser.add_option("-e",dest="encoding",
       help="Assume commit and author strings retrieved from Mercurial are encoded in <encoding>")
+  parser.add_option("--fe",dest="fn_encoding",
+      help="Assume file names from Mercurial are encoded in <filename_encoding>")
 
   (options,args)=parser.parse_args()
 
@@ -461,8 +463,12 @@ if __name__=='__main__':
   if options.encoding!=None:
     encoding=options.encoding
 
+  fn_encoding=encoding
+  if options.fn_encoding!=None:
+    fn_encoding=options.fn_encoding
+
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
                   options.headsfile, options.statusfile,
                   authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,encoding=encoding))
+                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding))
