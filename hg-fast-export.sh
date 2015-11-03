@@ -38,6 +38,8 @@ Options:
                   hg namespace.
 	-e <encoding> Assume commit and author strings retrieved from 
 	              Mercurial are encoded in <encoding>
+	--fe <filename_encoding> Assume filenames from Mercurial are encoded 
+	                         in <filename_encoding>
 "
 case "$1" in
     -h|--help)
