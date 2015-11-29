@@ -152,6 +152,6 @@ echo
 echo "Checkout your repo using"
 echo "git checkout HEAD"
 echo
-echo "If this repositor contains submodules, then initialize and update the submodules with the following commands."
+echo "If this repository contains submodules, then initialize and update the submodules with the following commands."
 echo "git submodule init"
 echo "git submodule update"

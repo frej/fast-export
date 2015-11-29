@@ -162,7 +162,7 @@ def export_file_contents(ctx,manifest,files,hgtags,repourl,revnode,ignoreSub,enc
       sys.stderr.write('Skip %s\n' % (file))
       continue
     # Skip .git files. They only get us in trouble.
-    if '/.git' in file:
+    if '.git' in file:
       sys.stderr.write('Skip %s\n' % (file))
       continue
     d=ctx.filectx(file).data()
