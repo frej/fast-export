@@ -70,9 +70,8 @@ def get_branch(name):
 def get_changeset(ui,repo,revision,authors={},encoding=''):
   node=repo.lookup(revision)
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
-  if encoding:
-    user=user.decode(encoding).encode('utf8')
-    desc=desc.decode(encoding).encode('utf8')
+  user=user.decode('cp1251').encode('utf8')
+  desc=desc.decode('cp1251').encode('utf8')
   tz="%+03d%02d" % (-timezone / 3600, ((-timezone % 3600) / 60))
   branch=get_branch(extra.get('branch','master'))
   return (node,manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
