@@ -26,7 +26,7 @@ hg-fast-export.sh -r <repo>
 
 Please note that hg-fast-export does not automatically check out the
 newly imported repository. You probably want to follow up the import
-with a "git checkout"-command.
+with a `git checkout`-command.
 
 Incremental imports to track hg repos is supported, too.
 
@@ -41,20 +41,20 @@ will give hints on which branches need adjustment for starting over
 again.
 
 When a mercurial repository does not use utf-8 for encoding author
-strings and commit messages the "-e <encoding>" command line option
+strings and commit messages the `-e <encoding>` command line option
 can be used to force fast-export to convert incoming meta data from
 <encoding> to utf-8. This encoding option is also applied to file names.
 
 In some locales Mercurial uses different encodings for commit messages
-and file names. In that case, you can use "--fe <encoding>" command line
+and file names. In that case, you can use `--fe <encoding>` command line
 option which overrides the -e option for file names.
 
 As mercurial appears to be much less picky about the syntax of the
 author information than git, an author mapping file can be given to
 hg-fast-export to fix up malformed author strings. The file is
 specified using the -A option. The file should contain lines of the
-form "FromAuthor=ToAuthor". The example authors.map below will
-translate "User <garbage<user@example.com>" to "User <user@example.com>".
+form `FromAuthor=ToAuthor`. The example authors.map below will
+translate `User <garbage<user@example.com>` to `User <user@example.com>`.
 
 ```
 -- Start of authors.map --
