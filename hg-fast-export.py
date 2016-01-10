@@ -170,7 +170,7 @@ def strip_leading_slash(filename):
   return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
-                  branchesmap,sob,brmap,hgtags,notes,encoding='',fn_encoding=''):
+                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding=''):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -235,23 +235,29 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   export_file_contents(ctx,man,changed,hgtags,fn_encoding)
   wr()
 
-  count=checkpoint(count)
-  count=generate_note(user,time,timezone,revision,ctx,count,notes)
-  return count
+  return checkpoint(count)
 
-def generate_note(user,time,timezone,revision,ctx,count,notes):
-  if not notes:
-    return count
+def export_note(ui,repo,revision,count,authors,encoding,is_first):
+  (revnode,_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
+
+  parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
+
   wr('commit refs/notes/hg')
   wr('committer %s %d %s' % (user,time,timezone))
   wr('data 0')
+  if is_first:
+    wr('from refs/notes/hg^0')
   wr('N inline :%d' % (revision+1))
-  hg_hash=ctx.hex()
+  hg_hash=repo.changectx(str(revision)).hex()
   wr('data %d' % (len(hg_hash)))
   wr_no_nl(hg_hash)
   wr()
   return checkpoint(count)
-  
+
+  wr('data %d' % (len(desc)+1)) # wtf?
+  wr(desc)
+  wr()
+
 def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
   l=repo.tagslist()
   for tag,node in l:
@@ -374,7 +380,10 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,notes,encoding,fn_encoding)
+                    sob,brmap,hgtags,encoding,fn_encoding)
+  if notes:
+    for rev in range(min,max):
+      c=export_note(ui,repo,rev,c,authors, encoding, rev == min and min != 0)
 
   state_cache['tip']=max
   state_cache['repo']=repourl
