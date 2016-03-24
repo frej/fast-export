@@ -149,11 +149,14 @@ def sanitize_name(name,what="branch"):
   """Sanitize input roughly according to git-check-ref-format(1)"""
 
   def dot(name):
-    if name[0] == '.': return '_'+name[1:]
+    if len(name) == 0:
+      return '_'
+    elif len(name) > 1 and name[0] == '.':
+      return '_'+name[1:]
     return name
 
   n=name
-  p=re.compile('([[ ~^:?\\\\*]|\.\.)')
+  p=re.compile(r'([\[\] ~^:`?\*\'\"\(\)]|\.\.)')
   n=p.sub('_', n)
   if n[-1] in ('/', '.'): n=n[:-1]+'_'
   n='/'.join(map(dot,n.split('/')))
