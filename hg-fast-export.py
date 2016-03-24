@@ -7,6 +7,11 @@ from mercurial import node
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
+from hgext.largefiles import lfutil
+
+import hashlib
+import shutil
+
 import re
 import sys
 import os
@@ -122,6 +127,27 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
+def generate_git_lfs_pointer(filename):
+  size = 0
+  hasher = hashlib.sha256()
+  with open(filename, "rb") as bfile:
+    buf = bfile.read(1024*1024*1024)
+    while buf:
+      hasher.update(buf)
+      size = size + len(buf)
+      buf = bfile.read(1024*1024*1024)
+  digest = hasher.hexdigest()
+  try:
+    os.makedirs("lfs/objects/%s/%s" % (digest[0:2],digest[2:4]))
+  except:
+    pass
+
+  shutil.copy2(filename, "lfs/objects/%s/%s/%s" % (digest[0:2],digest[2:4],digest))
+  return """version https://git-lfs.github.com/spec/v1
+oid sha256:%s
+size %d""" % (digest, size)
+
+
 def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
   count=0
   max=len(files)
@@ -135,6 +161,12 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
       filename=file.decode(encoding).encode('utf8')
     else:
       filename=file
+    if filename[:5] == ".hglf":
+      sys.stderr.write("Detected large file")
+      filename = filename[5:]
+      #should detect where the large files are located
+      lfsFileCached = lfutil.findfile(ctx.repo(), d.strip('\n'))
+      d = generate_git_lfs_pointer(lfsFileCached)
     wr('M %s inline %s' % (gitmode(manifest.flags(file)),
                            strip_leading_slash(filename)))
     wr('data %d' % len(d)) # had some trouble with size()
@@ -231,6 +263,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   if fn_encoding:
     removed=[r.decode(fn_encoding).encode('utf8') for r in removed]
 
+  # if the pointer is removed, remove the git pointer
+  removed=[x[5:] if len(x)>5 and x[:5] == ".hglf" else x for x in removed]
   removed=[strip_leading_slash(x) for x in removed]
 
   map(lambda r: wr('D %s' % r),removed)
