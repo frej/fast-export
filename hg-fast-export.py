@@ -327,7 +327,7 @@ def branchtip(repo, heads):
       break
   return tip
 
-def verify_heads(ui,repo,cache,force):
+def verify_heads(ui,repo,cache,force,branchesmap):
   branches={}
   for bn, heads in repo.branchmap().iteritems():
     branches[bn] = branchtip(repo, heads)
@@ -337,7 +337,7 @@ def verify_heads(ui,repo,cache,force):
   # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
     b=get_branch(b)
-    sha1=get_git_sha1(b)
+    sha1=get_git_sha1(sanitize_name(b,"branch",branchesmap))
     c=cache.get(b)
     if sha1!=c:
       sys.stderr.write('Error: Branch [%s] modified outside hg-fast-export:'
@@ -368,7 +368,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
 
   ui,repo=setup_repo(repourl)
 
-  if not verify_heads(ui,repo,heads_cache,force):
+  if not verify_heads(ui,repo,heads_cache,force,branchesmap):
     return 1
 
   try:
