@@ -296,6 +296,7 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
 def load_mapping(name, filename):
   cache={}
   if not os.path.exists(filename):
+    sys.stderr.write('Could not open mapping file [%s]\n' % (filename))
     return cache
   f=open(filename,'r')
   l=0
