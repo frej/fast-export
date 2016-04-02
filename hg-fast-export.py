@@ -148,6 +148,15 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
 def sanitize_name(name,what="branch"):
   """Sanitize input roughly according to git-check-ref-format(1)"""
 
+  # NOTE: Do not update this transform to work around
+  # incompatibilities on your platform. If you change it and it starts
+  # modifying names which previously were not touched it will break
+  # preexisting setups which are doing incremental imports.
+  #
+  # Use the -B and -T options to mangle branch and tag names
+  # instead. If you have a source repository where this is too much
+  # work to do manually, write a tool that does it for you.
+
   def dot(name):
     if name[0] == '.': return '_'+name[1:]
     return name
