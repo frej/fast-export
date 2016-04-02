@@ -145,7 +145,7 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
   if max>cfg_export_boundary:
     sys.stderr.write('Exported %d/%d files\n' % (count,max))
 
-def sanitize_name(name,what="branch"):
+def sanitize_name(name,what="branch", mapping={}):
   """Sanitize input roughly according to git-check-ref-format(1)"""
 
   # NOTE: Do not update this transform to work around
@@ -161,7 +161,7 @@ def sanitize_name(name,what="branch"):
     if name[0] == '.': return '_'+name[1:]
     return name
 
-  n=name
+  n=mapping.get(name,name)
   p=re.compile('([[ ~^:?\\\\*]|\.\.)')
   n=p.sub('_', n)
   if n[-1] in ('/', '.'): n=n[:-1]+'_'
@@ -183,7 +183,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
-    n=sanitize_name(branchesmap.get(name,name))
+    n=sanitize_name(name, "branch", branchesmap)
     brmap[name]=n
     return n
 
@@ -271,7 +271,7 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
   l=repo.tagslist()
   for tag,node in l:
     # Remap the branch name
-    tag=sanitize_name(tagsmap.get(tag,tag),"tag")
+    tag=sanitize_name(tag,"tag",tagsmap)
     # ignore latest revision
     if tag=='tip': continue
     # ignore tags to nodes that are missing (ie, 'in the future')
