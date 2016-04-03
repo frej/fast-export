@@ -359,12 +359,22 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
            sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding=''):
+  def check_cache(filename, contents):
+    if len(contents) == 0:
+      sys.stderr.write('Warning: %s does not contain any data, this will probably make an incremental import fail\n' % filename)
+
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
   mapping_cache=load_cache(mappingfile)
   heads_cache=load_cache(headsfile)
   state_cache=load_cache(tipfile)
+
+  if len(state_cache) != 0:
+    for (name, data) in [(marksfile, old_marks),
+                         (mappingfile, mapping_cache),
+                         (headsfile, state_cache)]:
+      check_cache(name, data)
 
   ui,repo=setup_repo(repourl)
 
