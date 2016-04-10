@@ -86,6 +86,21 @@ The way the hg API and remote access protocol is designed it is not
 possible to use hg-fast-export on remote repositories
 (http/ssh). First clone the repository, then convert it.
 
+Large files
+-----------
+
+If the repository contains largefiles, make sure you clone the repository
+using the options `--all-largefiles`.
+
+To extract the largefiles from the git repository you will need the
+[git-lfs](https://git-lfs.github.com/). Prior to pushing your new git
+repository on a remote server, make sure to run the following command to
+configure the pre-push hooks.
+
+```
+git lfs install
+```
+
 Design
 ------
 
