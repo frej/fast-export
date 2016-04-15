@@ -337,8 +337,9 @@ def verify_heads(ui,repo,cache,force,branchesmap):
   # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
     b=get_branch(b)
-    sha1=get_git_sha1(sanitize_name(b,"branch",branchesmap))
-    c=cache.get(b)
+    sanitized_name=sanitize_name(b,"branch",branchesmap)
+    sha1=get_git_sha1(sanitized_name)
+    c=cache.get(sanitized_name)
     if sha1!=c:
       sys.stderr.write('Error: Branch [%s] modified outside hg-fast-export:'
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
