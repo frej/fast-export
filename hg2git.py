@@ -7,6 +7,7 @@ from mercurial import hg,util,ui,templatefilters
 import re
 import os
 import sys
+import subprocess
 
 # default git branch name
 cfg_master='master'
@@ -105,12 +106,10 @@ def save_cache(filename,cache):
 def get_git_sha1(name,type='heads'):
   try:
     # use git-rev-parse to support packed refs
-    cmd="git rev-parse --verify refs/%s/%s 2>%s" % (type,name,os.devnull)
-    p=os.popen(cmd)
-    l=p.readline()
-    p.close()
+    ref="refs/%s/%s" % (type,name)
+    l=subprocess.check_output(["git", "rev-parse", "--verify", "--quiet", ref])
     if l == None or len(l) == 0:
       return None
     return l[0:40]
-  except IOError:
+  except subprocess.CalledProcessError:
     return None
