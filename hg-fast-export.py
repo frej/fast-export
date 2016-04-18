@@ -84,7 +84,7 @@ def merge_lfs_attributes(branch, merged_branch):
     if branch not in attribute_file:
       attribute_file[branch] = attribute_file[merged_branch]
     else:
-      attribute_file[branch] += attribute_file[merged_branch]
+      attribute_file[branch].update(attribute_file[merged_branch])
 
 def checkpoint(count):
   count=count+1
