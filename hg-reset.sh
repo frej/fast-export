@@ -24,7 +24,8 @@ Options:
 	-r	Mercurial repository to use
 "
 
-. "$(git --exec-path)/git-sh-setup"
+git_exec_path="$(git --exec-path)"
+PATH="$PATH:$git_exec_path" . "$git_exec_path/git-sh-setup"
 cd_to_toplevel
 
 while case "$#" in 0) break ;; esac
