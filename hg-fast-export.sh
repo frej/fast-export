@@ -13,7 +13,7 @@ SFX_STATE="state"
 GFI_OPTS=""
 PYTHON=${PYTHON:-python}
 
-USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
+USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>] [-c]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
@@ -40,6 +40,8 @@ Options:
 	              Mercurial are encoded in <encoding>
 	--fe <filename_encoding> Assume filenames from Mercurial are encoded 
 	                         in <filename_encoding>
+	-c        Prepend the branch name with the commit message
+	               to keep track of the mercurial branches.
 "
 case "$1" in
     -h|--help)
