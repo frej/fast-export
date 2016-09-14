@@ -24,8 +24,9 @@ Options:
 	-r	Mercurial repository to use
 "
 
-. "$(git --exec-path)/git-sh-setup"
-cd_to_toplevel
+cd $(git rev-parse --show-toplevel) \
+    || (echo "Could not find git repo" ; exit 1)
+GIT_DIR=$(git rev-parse --git-dir) || exit 1
 
 while case "$#" in 0) break ;; esac
 do
