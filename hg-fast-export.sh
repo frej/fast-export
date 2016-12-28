@@ -85,6 +85,13 @@ do
   shift
 done
 
+# Make a backup copy of each state file
+for i in $SFX_STATE $SFX_MARKS $SFX_MAPPING $SFX_HEADS ; do
+    if [ -f "$GIT_DIR/$PFX-$i" ] ; then
+	cp "$GIT_DIR/$PFX-$i" "$GIT_DIR/$PFX-$i~"
+    fi
+done
+
 # for convenience: get default repo from state file
 if [ x"$REPO" = x -a -f "$GIT_DIR/$PFX-$SFX_STATE" ] ; then
   REPO="`grep '^:repo ' "$GIT_DIR/$PFX-$SFX_STATE" | cut -d ' ' -f 2`"
