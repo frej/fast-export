@@ -59,6 +59,14 @@ if test "z$IS_BARE" != ztrue; then
 fi
 GIT_DIR=$(git rev-parse --git-dir) || (echo "Could not find git repo" ; exit 1)
 
+
+IGNORECASEWARN=""
+IGNORECASE=`git config core.ignoreCase`
+if [ "true" = "$IGNORECASE" ]; then
+    IGNORECASEWARN="true"
+fi;
+
+
 while case "$#" in 0) break ;; esac
 do
   case "$1" in
@@ -72,6 +80,7 @@ do
     --force)
       # pass --force to git-fast-import and hg-fast-export.py
       GFI_OPTS="$GFI_OPTS --force"
+      IGNORECASEWARN="";
       break
       ;;
     -*)
@@ -84,6 +93,14 @@ do
   esac
   shift
 done
+
+if [ ! -z "$IGNORECASEWARN" ]; then
+    echo "Error: The option core.ignoreCase is set to true on the git repository."
+    echo "This might produce incorrect git changesets for some file renames."
+    echo "Use --force to skip this check or change the option with"
+    echo "git config core.ignoreCase false"
+    exit 1
+fi;
 
 # Make a backup copy of each state file
 for i in $SFX_STATE $SFX_MARKS $SFX_MAPPING $SFX_HEADS ; do
