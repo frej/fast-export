@@ -158,7 +158,13 @@ def sanitize_name(name,what="branch", mapping={}):
   # work to do manually, write a tool that does it for you.
 
   def dot(name):
-    if name[0] == '.': return '_'+name[1:]
+    try:
+      if name == "":
+        name = "NULL"
+        sys.stderr.write("WARNING empty name\n")
+      elif name[0] == '.': return '_'+name[1:]
+    except:
+      sys.stderr.write("WARNING something very wrong with " + name)
     return name
 
   n=mapping.get(name,name)
