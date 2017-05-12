@@ -158,12 +158,20 @@ def sanitize_name(name,what="branch", mapping={}):
   # work to do manually, write a tool that does it for you.
 
   def dot(name):
-    if name[0] == '.': return '_'+name[1:]
+    if name[0] == '.':
+      if len(name) > 1:
+        return '_'+name[1:]
+      else: return '_'
     return name
 
   n=mapping.get(name,name)
   p=re.compile('([[ ~^:?\\\\*]|\.\.)')
   n=p.sub('_', n)
+  if n[0] in ('/', '.'):
+    if len(n) > 1:
+      n='_'+n[1:]
+    else:
+      n='_'
   if n[-1] in ('/', '.'): n=n[:-1]+'_'
   n='/'.join(map(dot,n.split('/')))
   p=re.compile('_+')
