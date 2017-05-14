@@ -158,6 +158,7 @@ def sanitize_name(name,what="branch", mapping={}):
   # work to do manually, write a tool that does it for you.
 
   def dot(name):
+    if not name: return name
     if name[0] == '.': return '_'+name[1:]
     return name
 
