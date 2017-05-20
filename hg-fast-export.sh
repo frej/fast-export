@@ -3,7 +3,11 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-ROOT="$(dirname "$(which "$0")")"
+READLINK="readlink"
+if command -v greadlink > /dev/null; then
+  READLINK="greadlink" # Prefer greadlink over readlink
+fi
+ROOT="$(dirname "$($READLINK -f "$(which "$0")")")"
 REPO=""
 PFX="hg2git"
 SFX_MAPPING="mapping"
