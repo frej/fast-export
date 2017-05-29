@@ -12,6 +12,7 @@ SFX_HEADS="heads"
 SFX_STATE="state"
 GFI_OPTS=""
 PYTHON=${PYTHON:-python}
+FORCE=0
 
 USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
@@ -81,6 +82,7 @@ do
       # pass --force to git-fast-import and hg-fast-export.py
       GFI_OPTS="$GFI_OPTS --force"
       IGNORECASEWARN="";
+      FORCE=1
       ;;
     -*)
       # pass any other options down to hg2git.py
@@ -128,6 +130,19 @@ fi
 # cleanup on exit
 trap 'rm -f "$GIT_DIR/$PFX-$SFX_MARKS.old" "$GIT_DIR/$PFX-$SFX_MARKS.tmp"' 0
 
+#
+# Setup arguments for python code to handle --force properly
+#
+PY_ARGS="$@"
+
+if [ $FORCE == 1 ]; then
+  if [ -z "$@" ]; then
+    PY_ARGS="--force"
+  else
+    PY_ARGS="--force $@"
+  fi
+fi
+
 _err1=
 _err2=
 exec 3>&1
@@ -142,7 +157,7 @@ $(
       --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
       --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
       --status "$GIT_DIR/$PFX-$SFX_STATE" \
-      "$@" 3>&- || _e1=$?
+      "$PY_ARGS" 3>&- || _e1=$?
     echo $_e1 >&3
   } | \
   {
