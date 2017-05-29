@@ -67,7 +67,7 @@ if [ "true" = "$IGNORECASE" ]; then
 fi;
 
 
-while case "$#" in 0) break ;; esac
+while [ $# -gt 0 ]
 do
   case "$1" in
     -r|--r|--re|--rep|--repo)
@@ -81,7 +81,6 @@ do
       # pass --force to git-fast-import and hg-fast-export.py
       GFI_OPTS="$GFI_OPTS --force"
       IGNORECASEWARN="";
-      break
       ;;
     -*)
       # pass any other options down to hg2git.py
