@@ -12,6 +12,18 @@ copies some code from the mercurial sources.
 
 The current maintainer is Frej Drejhammar <frej.drejhammar@gmail.com>.
 
+Support
+-------
+
+If you have problems with hg-fast-export or have found a bug, please
+create an issue at the [github issue tracker]
+(https://github.com/frej/fast-export/issues). Before creating a new
+issue, check that your problem has not already been addressed in an
+already closed issue. Do not contact the maintainer directly unless
+you want to report a security bug. That way the next person having the
+same problem can benefit from the time spent solving the problem the
+first time.
+
 Usage
 -----
 
