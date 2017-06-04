@@ -3,13 +3,22 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-from mercurial import node
+
+import sys
+import os
+import re
+
+try:
+    from mercurial import node
+except ImportError:
+    sys.stderr.write("abort: couldn't find mercurial libraries in [%s]\n" %
+                     ' '.join(sys.path))
+    sys.stderr.write("(check your install and PYTHONPATH)\n")
+    sys.exit(-1)
+
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
-import re
-import sys
-import os
 
 if sys.platform == "win32":
   # On Windows, sys.stdout is initially opened in text mode, which means that
