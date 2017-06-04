@@ -180,7 +180,7 @@ def strip_leading_slash(filename):
   return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
-                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding=''):
+                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',commitmsg=False):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -202,6 +202,11 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   if sob:
     wr('author %s %d %s' % (get_author(desc,user,authors),time,timezone))
   wr('committer %s %d %s' % (user,time,timezone))
+
+  #check if the desc does not start with the branch name before modifying the commit msg.
+  if commitmsg and not desc.startswith(branch):
+    desc=branch + ': ' + desc
+
   wr('data %d' % (len(desc)+1)) # wtf?
   wr(desc)
   wr()
@@ -360,7 +365,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding=''):
+           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',commitmsg=False):
   def check_cache(filename, contents):
     if len(contents) == 0:
       sys.stderr.write('Warning: %s does not contain any data, this will probably make an incremental import fail\n' % filename)
@@ -402,7 +407,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,encoding,fn_encoding)
+                    sob,brmap,hgtags,encoding,fn_encoding,commitmsg)
   if notes:
     for rev in range(min,max):
       c=export_note(ui,repo,rev,c,authors, encoding, rev == min and min != 0)
@@ -448,6 +453,8 @@ if __name__=='__main__':
       help="Read branch map from BRANCHESFILE")
   parser.add_option("-T","--tags",dest="tagsfile",
       help="Read tags map from TAGSFILE")
+  parser.add_option("-c",action="store_true",dest="commitmsg",
+      default=False,help="Prepend branch with commit msg")
   parser.add_option("-f","--force",action="store_true",dest="force",
       default=False,help="Ignore validation errors by force")
   parser.add_option("-M","--default-branch",dest="default_branch",
@@ -502,4 +509,4 @@ if __name__=='__main__':
                   options.headsfile, options.statusfile,
                   authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding))
+                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,commitmsg=options.commitmsg))
