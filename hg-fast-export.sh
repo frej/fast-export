@@ -7,7 +7,18 @@ READLINK="readlink"
 if command -v greadlink > /dev/null; then
   READLINK="greadlink" # Prefer greadlink over readlink
 fi
-ROOT="$(dirname "$($READLINK -f "$(which "$0")")")"
+
+if ! $READLINK -f "$(which "$0")" >& /dev/null; then
+    ROOT="$(dirname "$(which "$0")")"
+    if [ ! -f "$ROOT/hg-fast-export.py" ] ; then
+	echo "hg-fast-exports requires a readlink implementation which knows" \
+	     " how to canonicalize paths in order to be called via a symlink."
+	exit 1
+    fi
+else
+    ROOT="$(dirname "$($READLINK -f "$(which "$0")")")"
+fi
+
 REPO=""
 PFX="hg2git"
 SFX_MAPPING="mapping"
