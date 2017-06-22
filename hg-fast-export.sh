@@ -4,11 +4,11 @@
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 READLINK="readlink"
-if command -v greadlink > /dev/null; then
+if [ -n "$(command -v greadlink > /dev/null)" ]; then
   READLINK="greadlink" # Prefer greadlink over readlink
 fi
 
-if ! $READLINK -f "$(which "$0")" >& /dev/null; then
+if [ -z $($READLINK -f "$(which "$0")" >& /dev/null) ]; then
     ROOT="$(dirname "$(which "$0")")"
     if [ ! -f "$ROOT/hg-fast-export.py" ] ; then
 	echo "hg-fast-exports requires a readlink implementation which knows" \
