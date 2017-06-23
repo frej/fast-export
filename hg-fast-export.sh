@@ -8,7 +8,7 @@ if command -v greadlink > /dev/null; then
   READLINK="greadlink" # Prefer greadlink over readlink
 fi
 
-if ! $READLINK -f "$(which "$0")" >& /dev/null; then
+if ! $READLINK -f "$(which "$0")" 2>&1 > /dev/null; then
     ROOT="$(dirname "$(which "$0")")"
     if [ ! -f "$ROOT/hg-fast-export.py" ] ; then
 	echo "hg-fast-exports requires a readlink implementation which knows" \
