@@ -70,7 +70,7 @@ if test "z$IS_BARE" != ztrue; then
    # This is not a bare repo, cd to the toplevel
    TOPLEVEL=$(git rev-parse --show-toplevel) \
        || (echo "Could not find git repo toplevel" ; exit 1)
-   cd $TOPLEVEL || exit 1
+   cd "$TOPLEVEL" || exit 1
 fi
 GIT_DIR=$(git rev-parse --git-dir) || (echo "Could not find git repo" ; exit 1)
 
