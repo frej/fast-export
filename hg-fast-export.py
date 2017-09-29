@@ -295,6 +295,14 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
   return count
 
 def load_mapping(name, filename):
+  raw_regexp=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
+
+  def parse_raw_line(line):
+    m=raw_regexp.match(line)
+    if m==None:
+      return None
+    return (m.group(1).strip(), m.group(2).strip())
+
   cache={}
   if not os.path.exists(filename):
     sys.stderr.write('Could not open mapping file [%s]\n' % (filename))
@@ -302,18 +310,19 @@ def load_mapping(name, filename):
   f=open(filename,'r')
   l=0
   a=0
-  lre=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
   for line in f.readlines():
     l+=1
     line=line.strip()
-    if line=='' or line[0]=='#':
+    if l==1 and line[0]=='#' and line=='# quoted-escaped-strings':
       continue
-    m=lre.match(line)
+    elif line=='' or line[0]=='#':
+      continue
+    m=parse_raw_line(line)
     if m==None:
       sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
       continue
     # put key:value in cache, key without ^:
-    cache[m.group(1).strip()]=m.group(2).strip()
+    cache[m[0]]=m[1]
     a+=1
   f.close()
   sys.stderr.write('Loaded %d %s\n' % (a, name))
