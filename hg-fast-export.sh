@@ -55,6 +55,7 @@ Options:
 	              Mercurial are encoded in <encoding>
 	--fe <filename_encoding> Assume filenames from Mercurial are encoded 
 	                         in <filename_encoding>
+	--mappings-are-raw Assume mappings are raw <key>=<value> lines
 "
 case "$1" in
     -h|--help)

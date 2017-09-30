@@ -294,14 +294,23 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
     count=checkpoint(count)
   return count
 
-def load_mapping(name, filename):
+def load_mapping(name, filename, mapping_is_raw):
   raw_regexp=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
+  string_regexp='"(((\\.)|(\\")|[^"])*)"'
+  quoted_regexp=re.compile('^'+string_regexp+'[ ]*=[ ]*'+string_regexp+'$')
 
   def parse_raw_line(line):
     m=raw_regexp.match(line)
     if m==None:
       return None
     return (m.group(1).strip(), m.group(2).strip())
+
+  def parse_quoted_line(line):
+    m=quoted_regexp.match(line)
+    if m==None:
+      return None
+    return (m.group(1).decode('string_escape'),
+            m.group(5).decode('string_escape'))
 
   cache={}
   if not os.path.exists(filename):
@@ -317,7 +326,7 @@ def load_mapping(name, filename):
       continue
     elif line=='' or line[0]=='#':
       continue
-    m=parse_raw_line(line)
+    m=parse_raw_line(line) if mapping_is_raw else parse_quoted_line(line)
     if m==None:
       sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
       continue
@@ -469,6 +478,8 @@ if __name__=='__main__':
       help="Assume commit and author strings retrieved from Mercurial are encoded in <encoding>")
   parser.add_option("--fe",dest="fn_encoding",
       help="Assume file names from Mercurial are encoded in <filename_encoding>")
+  parser.add_option("--mappings-are-raw",dest="raw_mappings", default=False,
+      help="Assume mappings are raw <key>=<value> lines")
 
   (options,args)=parser.parse_args()
 
@@ -483,15 +494,15 @@ if __name__=='__main__':
 
   a={}
   if options.authorfile!=None:
-    a=load_mapping('authors', options.authorfile)
+    a=load_mapping('authors', options.authorfile, options.raw_mappings)
 
   b={}
   if options.branchesfile!=None:
-    b=load_mapping('branches', options.branchesfile)
+    b=load_mapping('branches', options.branchesfile, options.raw_mappings)
 
   t={}
   if options.tagsfile!=None:
-    t=load_mapping('tags', options.tagsfile)
+    t=load_mapping('tags', options.tagsfile, True)
 
   if options.default_branch!=None:
     set_default_branch(options.default_branch)
