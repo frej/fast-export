@@ -169,6 +169,9 @@ def sanitize_name(name,what="branch", mapping={}):
   n='/'.join(map(dot,n.split('/')))
   p=re.compile('_+')
   n=p.sub('_', n)
+  
+  n = n.replace("\n", "")
+  n = n.replace("\r", "")
 
   if n!=name:
     sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
