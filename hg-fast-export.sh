@@ -153,7 +153,7 @@ $(
   exec 4>&3 3>&1 1>&4 4>&-
   {
     _e1=0
-    GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
+    GIT_DIR="$GIT_DIR" "$PYTHON" "$ROOT/hg-fast-export.py" \
       --repo "$REPO" \
       --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
       --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
