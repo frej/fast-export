@@ -153,9 +153,13 @@ def sanitize_name(name,what="branch", mapping={}):
   # modifying names which previously were not touched it will break
   # preexisting setups which are doing incremental imports.
   #
-  # Use the -B and -T options to mangle branch and tag names
-  # instead. If you have a source repository where this is too much
-  # work to do manually, write a tool that does it for you.
+  # Fast-export tries to not inflict arbitrary naming policy on the
+  # user, instead it aims to provide mechanisms allowing the user to
+  # apply their own policy. Therefore do not add a transform which can
+  # already be implemented with the -B and -T options to mangle branch
+  # and tag names. If you have a source repository where this is too
+  # much work to do manually, write a tool that does it for you.
+  #
 
   def dot(name):
     if not name: return name
