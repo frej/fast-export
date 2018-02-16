@@ -196,6 +196,12 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   branch=get_branchname(branch)
 
+  if "/" in branch:
+    branch=branch.replace("/", "_")
+	
+  if "\\" in branch:
+    branch=branch.replace("\\", "_")
+  
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
 
   if len(parents)==0 and revision != 0:
