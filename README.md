@@ -1,5 +1,7 @@
-hg-fast-export.(sh|py) - mercurial to git converter using git-fast-import
+hg-fast-export.(sh|py)
 =========================================================================
+
+> `mercurial` to `git` converter using git-fast-import
 
 Legal
 -----
