@@ -4,6 +4,7 @@
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import node
+from mercurial.scmutil import revsymbol
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
@@ -78,7 +79,7 @@ def get_filechanges(repo,revision,parents,mleft):
   l,c,r=[],[],[]
   for p in parents:
     if p<0: continue
-    mright=repo.changectx(p).manifest()
+    mright=revsymbol(repo,str(p)).manifest()
     l,c,r=split_dict(mleft,mright,l,c,r)
   l.sort()
   c.sort()
@@ -210,7 +211,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   wr(desc)
   wr()
 
-  ctx=repo.changectx(str(revision))
+  ctx=revsymbol(repo,str(revision))
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
@@ -225,7 +226,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       # later non-merge revision: feed in changed manifest
       # if we have exactly one parent, just take the changes from the
       # manifest without expensively comparing checksums
-      f=repo.status(repo.lookup(parents[0]),revnode)[:3]
+      f=repo.status(parents[0],revnode)[:3]
       added,changed,removed=f[1],f[0],f[2]
       type='simple delta'
     else: # a merge with two parents
@@ -262,7 +263,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
   if is_first:
     wr('from refs/notes/hg^0')
   wr('N inline :%d' % (revision+1))
-  hg_hash=repo.changectx(str(revision)).hex()
+  hg_hash=revsymbol(repo,str(revision)).hex()
   wr('data %d' % (len(hg_hash)))
   wr_no_nl(hg_hash)
   wr()

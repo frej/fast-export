@@ -4,6 +4,9 @@
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import hg,util,ui,templatefilters
+from mercurial import error as hgerror
+from mercurial.scmutil import revsymbol,binnode
+
 import re
 import os
 import sys
@@ -69,7 +72,15 @@ def get_branch(name):
   return name
 
 def get_changeset(ui,repo,revision,authors={},encoding=''):
-  node=repo.lookup(revision)
+  # Starting with Mercurial 4.6 lookup no longer accepts raw hashes
+  # for lookups. Work around it by changing our behaviour depending on
+  # how it fails
+  try:
+    node=repo.lookup(revision)
+  except hgerror.ProgrammingError:
+    node=binnode(revsymbol(repo,str(revision))) # We were given a numeric rev
+  except hgerror.RepoLookupError:
+    node=revision # We got a raw hash
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
   if encoding:
     user=user.decode(encoding).encode('utf8')
