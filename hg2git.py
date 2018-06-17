@@ -3,9 +3,14 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
+mercurial_v4_6 = True
+try:
+  from mercurial.scmutil import revsymbol,binnode
+  from mercurial import error as hgerror
+except ImportError:
+  mercurial_v4_6 = False
+
 from mercurial import hg,util,ui,templatefilters
-from mercurial import error as hgerror
-from mercurial.scmutil import revsymbol,binnode
 
 import re
 import os
