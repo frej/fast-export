@@ -56,6 +56,8 @@ Options:
 	--fe <filename_encoding> Assume filenames from Mercurial are encoded 
 	                         in <filename_encoding>
 	--mappings-are-raw Assume mappings are raw <key>=<value> lines
+	--filter-contents <cmd>  Pipe contents of each exported file through <cmd>
+	                         with <file-path> <hg-hash> <is-binary> as arguments
 "
 case "$1" in
     -h|--help)

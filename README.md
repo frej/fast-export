@@ -99,6 +99,27 @@ name the -B and -T options allow a mapping file to be specified to
 rename branches and tags (respectively). The syntax of the mapping
 file is the same as for the author mapping.
 
+Content filtering
+-----------------
+
+hg-fast-export supports filtering the content of exported files.
+The filter is supplied to the --filter-contents option. hg-fast-export
+runs the filter for each exported file, pipes its content to the filter's
+standard input, and uses the filter's standard output in place
+of the file's original content. The prototypical use of this feature
+is to convert line endings in text files from CRLF to git's preferred LF:
+
+```
+-- Start of crlf-filter.sh --
+#!/bin/sh
+# $1 = pathname of exported file relative to the root of the repo
+# $2 = Mercurial's hash of the file
+# $3 = "1" if Mercurial reports the file as binary, otherwise "0"
+
+if [ "$3" == "1" ]; then cat; else dos2unix; fi
+-- End of crlf-filter.sh --
+```
+
 Notes/Limitations
 -----------------
 
