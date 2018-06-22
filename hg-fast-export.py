@@ -123,7 +123,7 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
+def export_file_contents(ctx,manifest,files,hgtags,encoding='',filter_contents=None):
   count=0
   max=len(files)
   for file in files:
@@ -131,11 +131,24 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
     if not hgtags and file == ".hgtags":
       sys.stderr.write('Skip %s\n' % (file))
       continue
-    d=ctx.filectx(file).data()
     if encoding:
       filename=file.decode(encoding).encode('utf8')
     else:
       filename=file
+    file_ctx=ctx.filectx(file)
+    d=file_ctx.data()
+    if filter_contents:
+      import subprocess
+      filter_cmd=filter_contents + [filename,node.hex(file_ctx.filenode()),'1' if file_ctx.isbinary() else '0']
+      try:
+        filter_proc=subprocess.Popen(filter_cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+        d,_=filter_proc.communicate(d)
+      except:
+        sys.stderr.write('Running filter-contents %s:\n' % filter_cmd)
+        raise
+      filter_ret=filter_proc.poll()
+      if filter_ret:
+        raise subprocess.CalledProcessError(filter_ret,filter_cmd)
     wr('M %s inline %s' % (gitmode(manifest.flags(file)),
                            strip_leading_slash(filename)))
     wr('data %d' % len(d)) # had some trouble with size()
@@ -185,7 +198,7 @@ def strip_leading_slash(filename):
   return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
-                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding=''):
+                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',filter_contents=None):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -246,8 +259,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   removed=[strip_leading_slash(x) for x in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,fn_encoding)
-  export_file_contents(ctx,man,changed,hgtags,fn_encoding)
+  export_file_contents(ctx,man,added,hgtags,fn_encoding,filter_contents)
+  export_file_contents(ctx,man,changed,hgtags,fn_encoding,filter_contents)
   wr()
 
   return checkpoint(count)
@@ -383,7 +396,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding=''):
+           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',filter_contents=None):
   def check_cache(filename, contents):
     if len(contents) == 0:
       sys.stderr.write('Warning: %s does not contain any data, this will probably make an incremental import fail\n' % filename)
@@ -425,7 +438,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,encoding,fn_encoding)
+                    sob,brmap,hgtags,encoding,fn_encoding,filter_contents)
   if notes:
     for rev in range(min,max):
       c=export_note(ui,repo,rev,c,authors, encoding, rev == min and min != 0)
@@ -485,6 +498,8 @@ if __name__=='__main__':
       help="Assume file names from Mercurial are encoded in <filename_encoding>")
   parser.add_option("--mappings-are-raw",dest="raw_mappings", default=False,
       help="Assume mappings are raw <key>=<value> lines")
+  parser.add_option("--filter-contents",dest="filter_contents",
+      help="Pipe contents of each exported file through FILTER_CONTENTS <file-path> <hg-hash> <is-binary>")
 
   (options,args)=parser.parse_args()
 
@@ -523,8 +538,13 @@ if __name__=='__main__':
   if options.fn_encoding!=None:
     fn_encoding=options.fn_encoding
 
+  filter_contents=None
+  if options.filter_contents!=None:
+    import shlex
+    filter_contents=shlex.split(options.filter_contents)
+
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
                   options.headsfile, options.statusfile,
                   authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding))
+                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,filter_contents=filter_contents))
