@@ -39,10 +39,12 @@ def setup_repo(url):
 
 def fixup_user(user,authors):
   user=user.strip("\"")
+  
   if authors!=None:
     # if we have an authors table, try to get mapping
     # by defaulting to the current value of 'user'
     user=authors.get(user,user)
+
   name,mail,m='','',user_re.match(user)
   if m==None:
     # if we don't have 'Name <mail>' syntax, extract name
@@ -60,6 +62,10 @@ def fixup_user(user,authors):
   m2=user_clean_re.match(name)
   if m2!=None:
     name=m2.group(1)
+
+  if name=='' or name==None or name=='<>':
+    name='Unknown User'
+    
   return '%s %s' % (name,mail)
 
 def get_branch(name):
