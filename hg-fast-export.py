@@ -3,13 +3,17 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-mercurial_v4_6 = True
+
 try:
-  from mercurial.scmutil import revsymbol
-except ImportError:
-  mercurial_v4_6 = False
+  from mercurial.scmutil import revsymbol  # mercurial v4.6+
+  def lookup_if_required(repo, rev):
+    return rev
+except ImportError: # backward compatibility
+  print("Mercurial versions prior to 4.6 will soon become incompatible with the fast-export. Consider updating.")
   def revsymbol(repo,revision):
     return repo.changectx(revision)
+  def lookup_if_required(repo, rev):
+    return repo.lookup(rev)
 
 from mercurial import node
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
@@ -233,7 +237,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       # later non-merge revision: feed in changed manifest
       # if we have exactly one parent, just take the changes from the
       # manifest without expensively comparing checksums
-      f=repo.status(parents[0] if mercurial_v4_6 else repo.lookup(parents[0]),revnode)[:3]
+      f=repo.status(lookup_if_required(repo, parents[0]),revnode)[:3]
       added,changed,removed=f[1],f[0],f[2]
       type='simple delta'
     else: # a merge with two parents

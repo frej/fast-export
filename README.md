@@ -27,7 +27,7 @@ first time.
 System Requirements
 -------------------
 
-This project depends on Python 2.7 and the `mercurial` package. If
+This project depends on Python 2.7 and the Mercurial 4.6 package. If
 Python is not installed, install it before proceeding. The Mercurial
 package can be installed with `pip install mercurial`.
 

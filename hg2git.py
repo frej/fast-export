@@ -3,12 +3,11 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-mercurial_v4_6 = True
 try:
   from mercurial.scmutil import revsymbol,binnode
   from mercurial import error as hgerror
 except ImportError:
-  mercurial_v4_6 = False
+  print("Mercurial versions prior to 4.6 will soon become incompatible with the fast-export. Consider updating.")
 
 from mercurial import hg,util,ui,templatefilters
 
