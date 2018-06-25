@@ -4,7 +4,13 @@
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import node
-from mercurial.scmutil import revsymbol
+try:
+  from mercurial.scmutil import revsymbol
+  HG46 = True
+except ImportError:
+  def revsymbol(repo,revision):
+    return repo.changectx(revision)
+  HG46 = False
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
@@ -239,7 +245,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       # later non-merge revision: feed in changed manifest
       # if we have exactly one parent, just take the changes from the
       # manifest without expensively comparing checksums
-      f=repo.status(parents[0],revnode)[:3]
+      f=repo.status(parents[0] if HG46 else repo.lookup(parents[0]),revnode)[:3]
       added,changed,removed=f[1],f[0],f[2]
       type='simple delta'
     else: # a merge with two parents
