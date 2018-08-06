@@ -49,7 +49,7 @@ def fixup_user(user,authors):
     # and mail from hg helpers. this seems to work pretty well.
     # if email doesn't contain @, replace it with devnull@localhost
     name=templatefilters.person(user)
-    mail='<%s>' % util.email(user)
+    mail='<%s>' % templatefilters.email(user)
     if '@' not in mail:
       mail = '<devnull@localhost>'
   else:
