@@ -26,7 +26,7 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 GFI_OPTS=""
-PYTHON=${PYTHON:-python}
+PYTHON=${PYTHON:-python2}
 
 USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
