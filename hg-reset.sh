@@ -24,8 +24,15 @@ Options:
 	-r	Mercurial repository to use
 "
 
-. "$(git --exec-path)/git-sh-setup"
-cd_to_toplevel
+IS_BARE=$(git rev-parse --is-bare-repository) \
+    || (echo "Could not find git repo" ; exit 1)
+if test "z$IS_BARE" != ztrue; then
+   # This is not a bare repo, cd to the toplevel
+   TOPLEVEL=$(git rev-parse --show-toplevel) \
+       || (echo "Could not find git repo toplevel" ; exit 1)
+   cd $TOPLEVEL || exit 1
+fi
+GIT_DIR=$(git rev-parse --git-dir) || (echo "Could not find git repo" ; exit 1)
 
 while case "$#" in 0) break ;; esac
 do

@@ -12,6 +12,28 @@ copies some code from the mercurial sources.
 
 The current maintainer is Frej Drejhammar <frej.drejhammar@gmail.com>.
 
+Support
+-------
+
+If you have problems with hg-fast-export or have found a bug, please
+create an issue at the [github issue tracker]
+(https://github.com/frej/fast-export/issues). Before creating a new
+issue, check that your problem has not already been addressed in an
+already closed issue. Do not contact the maintainer directly unless
+you want to report a security bug. That way the next person having the
+same problem can benefit from the time spent solving the problem the
+first time.
+
+System Requirements
+-------------------
+
+This project depends on Python 2.7 and the Mercurial 4.6 package. If
+Python is not installed, install it before proceeding. The Mercurial
+package can be installed with `pip install mercurial`.
+
+If you're on Windows, run the following commands in git bash (Git for
+Windows).
+
 Usage
 -----
 
@@ -21,7 +43,8 @@ Using hg-fast-export is quite simple for a mercurial repository <repo>:
 mkdir repo-git # or whatever
 cd repo-git
 git init
-hg-fast-export.sh -r <repo>
+hg-fast-export.sh -r <local-repo>
+git checkout HEAD
 ```
 
 Please note that hg-fast-export does not automatically check out the
@@ -53,12 +76,18 @@ As mercurial appears to be much less picky about the syntax of the
 author information than git, an author mapping file can be given to
 hg-fast-export to fix up malformed author strings. The file is
 specified using the -A option. The file should contain lines of the
-form `FromAuthor=ToAuthor`. The example authors.map below will
-translate `User <garbage<user@example.com>` to `User <user@example.com>`.
+form `"<key>"="<value>"`. Inside the key and value strings, all escape
+sequences understood by the python `string_escape` encoding are
+supported. (Versions of fast-export prior to v171002 had a different
+syntax, the old syntax can be enabled by the flag
+`--mappings-are-raw`.)
+
+The example authors.map below will translate `User
+<garbage<tab><user@example.com>` to `User <user@example.com>`.
 
 ```
 -- Start of authors.map --
-User <garbage<user@example.com>=User <user@example.com>
+"User <garbage\t<user@example.com>"="User <user@example.com>"
 -- End of authors.map --
 ```
 
@@ -69,6 +98,27 @@ As Git and Mercurial have differ in what is a valid branch and tag
 name the -B and -T options allow a mapping file to be specified to
 rename branches and tags (respectively). The syntax of the mapping
 file is the same as for the author mapping.
+
+Content filtering
+-----------------
+
+hg-fast-export supports filtering the content of exported files.
+The filter is supplied to the --filter-contents option. hg-fast-export
+runs the filter for each exported file, pipes its content to the filter's
+standard input, and uses the filter's standard output in place
+of the file's original content. The prototypical use of this feature
+is to convert line endings in text files from CRLF to git's preferred LF:
+
+```
+-- Start of crlf-filter.sh --
+#!/bin/sh
+# $1 = pathname of exported file relative to the root of the repo
+# $2 = Mercurial's hash of the file
+# $3 = "1" if Mercurial reports the file as binary, otherwise "0"
+
+if [ "$3" == "1" ]; then cat; else dos2unix; fi
+-- End of crlf-filter.sh --
+```
 
 Notes/Limitations
 -----------------

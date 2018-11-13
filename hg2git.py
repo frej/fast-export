@@ -1,12 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import hg,util,ui,templatefilters
+from mercurial import error as hgerror
+from mercurial.scmutil import revsymbol,binnode
+
 import re
 import os
 import sys
+import subprocess
 
 # default git branch name
 cfg_master='master'
@@ -45,7 +49,7 @@ def fixup_user(user,authors):
     # and mail from hg helpers. this seems to work pretty well.
     # if email doesn't contain @, replace it with devnull@localhost
     name=templatefilters.person(user)
-    mail='<%s>' % util.email(user)
+    mail='<%s>' % templatefilters.email(user)
     if '@' not in mail:
       mail = '<devnull@localhost>'
   else:
@@ -68,7 +72,15 @@ def get_branch(name):
   return name
 
 def get_changeset(ui,repo,revision,authors={},encoding=''):
-  node=repo.lookup(revision)
+  # Starting with Mercurial 4.6 lookup no longer accepts raw hashes
+  # for lookups. Work around it by changing our behaviour depending on
+  # how it fails
+  try:
+    node=repo.lookup(revision)
+  except hgerror.ProgrammingError:
+    node=binnode(revsymbol(repo,str(revision))) # We were given a numeric rev
+  except hgerror.RepoLookupError:
+    node=revision # We got a raw hash
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
   if encoding:
     user=user.decode(encoding).encode('utf8')
@@ -105,12 +117,10 @@ def save_cache(filename,cache):
 def get_git_sha1(name,type='heads'):
   try:
     # use git-rev-parse to support packed refs
-    cmd="git rev-parse --verify refs/%s/%s 2>%s" % (type,name,os.devnull)
-    p=os.popen(cmd)
-    l=p.readline()
-    p.close()
+    ref="refs/%s/%s" % (type,name)
+    l=subprocess.check_output(["git", "rev-parse", "--verify", "--quiet", ref])
     if l == None or len(l) == 0:
       return None
     return l[0:40]
-  except IOError:
+  except subprocess.CalledProcessError:
     return None

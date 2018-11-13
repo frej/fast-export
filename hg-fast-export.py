@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import node
+from mercurial.scmutil import revsymbol
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
@@ -126,7 +127,7 @@ def get_filechanges(repo,revision,parents,mleft):
   l,c,r=[],[],[]
   for p in parents:
     if p<0: continue
-    mright=repo.changectx(p).manifest()
+    mright=revsymbol(repo,str(p)).manifest()
     l,c,r=split_dict(mleft,mright,l,c,r)
   l.sort()
   c.sort()
@@ -198,7 +199,8 @@ size %d
 """ % (digest, size)
 
 
-def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
+def export_file_contents(ctx,manifest,files,hgtags,encoding='',filter_contents=None):
+
   count=0
   max=len(files)
   gitAttribute=None
@@ -207,7 +209,6 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
     if not hgtags and file == ".hgtags":
       sys.stderr.write('Skip %s\n' % (file))
       continue
-    d=ctx.filectx(file).data()
     if encoding:
       filename=file.decode(encoding).encode('utf8')
     else:
@@ -227,6 +228,22 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding=''):
         sys.stderr.write("Please clone with --all-largefiles\n")
         sys.stderr.write("or pull with --lfrev %s\n" % (str(ctx.rev())))
         sys.exit(3) # closing in the middle of import will revert everything to the last checkpoint
+
+    file_ctx=ctx.filectx(file)
+    d=file_ctx.data()
+    if filter_contents:
+      import subprocess
+      filter_cmd=filter_contents + [filename,node.hex(file_ctx.filenode()),'1' if file_ctx.isbinary() else '0']
+      try:
+        filter_proc=subprocess.Popen(filter_cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+        d,_=filter_proc.communicate(d)
+      except:
+        sys.stderr.write('Running filter-contents %s:\n' % filter_cmd)
+        raise
+      filter_ret=filter_proc.poll()
+      if filter_ret:
+        raise subprocess.CalledProcessError(filter_ret,filter_cmd)
+
     wr('M %s inline %s' % (gitmode(manifest.flags(file)),
                            strip_leading_slash(filename)))
     wr('data %d' % len(d)) # had some trouble with size()
@@ -245,11 +262,16 @@ def sanitize_name(name,what="branch", mapping={}):
   # modifying names which previously were not touched it will break
   # preexisting setups which are doing incremental imports.
   #
-  # Use the -B and -T options to mangle branch and tag names
-  # instead. If you have a source repository where this is too much
-  # work to do manually, write a tool that does it for you.
+  # Fast-export tries to not inflict arbitrary naming policy on the
+  # user, instead it aims to provide mechanisms allowing the user to
+  # apply their own policy. Therefore do not add a transform which can
+  # already be implemented with the -B and -T options to mangle branch
+  # and tag names. If you have a source repository where this is too
+  # much work to do manually, write a tool that does it for you.
+  #
 
   def dot(name):
+    if not name: return name
     if name[0] == '.': return '_'+name[1:]
     return name
 
@@ -271,7 +293,7 @@ def strip_leading_slash(filename):
   return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
-                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding=''):
+                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',filter_contents=None):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -297,7 +319,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   wr(desc)
   wr()
 
-  ctx=repo.changectx(str(revision))
+  ctx=revsymbol(repo,str(revision))
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
@@ -312,7 +334,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       # later non-merge revision: feed in changed manifest
       # if we have exactly one parent, just take the changes from the
       # manifest without expensively comparing checksums
-      f=repo.status(repo.lookup(parents[0]),revnode)[:3]
+      f=repo.status(parents[0],revnode)[:3]
       added,changed,removed=f[1],f[0],f[2]
       type='simple delta'
     else: # a merge with two parents
@@ -348,8 +370,9 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   removed=[strip_leading_slash(x) for x in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,fn_encoding)
-  export_file_contents(ctx,man,changed,hgtags,fn_encoding)
+
+  export_file_contents(ctx,man,added,hgtags,fn_encoding,filter_contents)
+  export_file_contents(ctx,man,changed,hgtags,fn_encoding,filter_contents)
 
   if new_lfs_entry:
     gitAttributes = build_lfs_attributes(branch)
@@ -358,7 +381,6 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       wr('data %d' % len(gitAttributes))
       wr(gitAttributes)
       sys.stderr.write('Exported .gitattributes\n')
-
   wr()
 
   return checkpoint(count)
@@ -374,7 +396,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
   if is_first:
     wr('from refs/notes/hg^0')
   wr('N inline :%d' % (revision+1))
-  hg_hash=repo.changectx(str(revision)).hex()
+  hg_hash=revsymbol(repo,str(revision)).hex()
   wr('data %d' % (len(hg_hash)))
   wr_no_nl(hg_hash)
   wr()
@@ -410,7 +432,24 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
     count=checkpoint(count)
   return count
 
-def load_mapping(name, filename):
+def load_mapping(name, filename, mapping_is_raw):
+  raw_regexp=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
+  string_regexp='"(((\\.)|(\\")|[^"])*)"'
+  quoted_regexp=re.compile('^'+string_regexp+'[ ]*=[ ]*'+string_regexp+'$')
+
+  def parse_raw_line(line):
+    m=raw_regexp.match(line)
+    if m==None:
+      return None
+    return (m.group(1).strip(), m.group(2).strip())
+
+  def parse_quoted_line(line):
+    m=quoted_regexp.match(line)
+    if m==None:
+      return None
+    return (m.group(1).decode('string_escape'),
+            m.group(5).decode('string_escape'))
+
   cache={}
   if not os.path.exists(filename):
     sys.stderr.write('Could not open mapping file [%s]\n' % (filename))
@@ -418,18 +457,19 @@ def load_mapping(name, filename):
   f=open(filename,'r')
   l=0
   a=0
-  lre=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
   for line in f.readlines():
     l+=1
     line=line.strip()
-    if line=='' or line[0]=='#':
+    if l==1 and line[0]=='#' and line=='# quoted-escaped-strings':
       continue
-    m=lre.match(line)
+    elif line=='' or line[0]=='#':
+      continue
+    m=parse_raw_line(line) if mapping_is_raw else parse_quoted_line(line)
     if m==None:
       sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
       continue
     # put key:value in cache, key without ^:
-    cache[m.group(1).strip()]=m.group(2).strip()
+    cache[m[0]]=m[1]
     a+=1
   f.close()
   sys.stderr.write('Loaded %d %s\n' % (a, name))
@@ -454,8 +494,9 @@ def verify_heads(ui,repo,cache,force,branchesmap):
   # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
     b=get_branch(b)
-    sha1=get_git_sha1(sanitize_name(b,"branch",branchesmap))
-    c=cache.get(b)
+    sanitized_name=sanitize_name(b,"branch",branchesmap)
+    sha1=get_git_sha1(sanitized_name)
+    c=cache.get(sanitized_name)
     if sha1!=c:
       sys.stderr.write('Error: Branch [%s] modified outside hg-fast-export:'
         '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
@@ -475,13 +516,23 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding=''):
+           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',filter_contents=None):
+  def check_cache(filename, contents):
+    if len(contents) == 0:
+      sys.stderr.write('Warning: %s does not contain any data, this will probably make an incremental import fail\n' % filename)
+
   _max=int(m)
 
   old_marks=load_cache(marksfile,lambda s: int(s)-1)
   mapping_cache=load_cache(mappingfile)
   heads_cache=load_cache(headsfile)
   state_cache=load_cache(tipfile)
+
+  if len(state_cache) != 0:
+    for (name, data) in [(marksfile, old_marks),
+                         (mappingfile, mapping_cache),
+                         (headsfile, state_cache)]:
+      check_cache(name, data)
 
   ui,repo=setup_repo(repourl)
 
@@ -507,7 +558,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,encoding,fn_encoding)
+                    sob,brmap,hgtags,encoding,fn_encoding,filter_contents)
   if notes:
     for rev in range(min,max):
       c=export_note(ui,repo,rev,c,authors, encoding, rev == min and min != 0)
@@ -565,6 +616,10 @@ if __name__=='__main__':
       help="Assume commit and author strings retrieved from Mercurial are encoded in <encoding>")
   parser.add_option("--fe",dest="fn_encoding",
       help="Assume file names from Mercurial are encoded in <filename_encoding>")
+  parser.add_option("--mappings-are-raw",dest="raw_mappings", default=False,
+      help="Assume mappings are raw <key>=<value> lines")
+  parser.add_option("--filter-contents",dest="filter_contents",
+      help="Pipe contents of each exported file through FILTER_CONTENTS <file-path> <hg-hash> <is-binary>")
 
   (options,args)=parser.parse_args()
 
@@ -579,15 +634,15 @@ if __name__=='__main__':
 
   a={}
   if options.authorfile!=None:
-    a=load_mapping('authors', options.authorfile)
+    a=load_mapping('authors', options.authorfile, options.raw_mappings)
 
   b={}
   if options.branchesfile!=None:
-    b=load_mapping('branches', options.branchesfile)
+    b=load_mapping('branches', options.branchesfile, options.raw_mappings)
 
   t={}
   if options.tagsfile!=None:
-    t=load_mapping('tags', options.tagsfile)
+    t=load_mapping('tags', options.tagsfile, True)
 
   if options.default_branch!=None:
     set_default_branch(options.default_branch)
@@ -603,8 +658,13 @@ if __name__=='__main__':
   if options.fn_encoding!=None:
     fn_encoding=options.fn_encoding
 
+  filter_contents=None
+  if options.filter_contents!=None:
+    import shlex
+    filter_contents=shlex.split(options.filter_contents)
+
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
                   options.headsfile, options.statusfile,
                   authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding))
+                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,filter_contents=filter_contents))

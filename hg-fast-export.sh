@@ -3,7 +3,22 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-ROOT="$(dirname "$(which "$0")")"
+READLINK="readlink"
+if command -v greadlink > /dev/null; then
+  READLINK="greadlink" # Prefer greadlink over readlink
+fi
+
+if ! $READLINK -f "$(which "$0")" > /dev/null 2>&1 ; then
+    ROOT="$(dirname "$(which "$0")")"
+    if [ ! -f "$ROOT/hg-fast-export.py" ] ; then
+	echo "hg-fast-exports requires a readlink implementation which knows" \
+	     " how to canonicalize paths in order to be called via a symlink."
+	exit 1
+    fi
+else
+    ROOT="$(dirname "$($READLINK -f "$(which "$0")")")"
+fi
+
 REPO=""
 PFX="hg2git"
 SFX_MAPPING="mapping"
@@ -11,7 +26,7 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 GFI_OPTS=""
-PYTHON=${PYTHON:-python}
+PYTHON=${PYTHON:-python2}
 
 USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
@@ -40,6 +55,9 @@ Options:
 	              Mercurial are encoded in <encoding>
 	--fe <filename_encoding> Assume filenames from Mercurial are encoded 
 	                         in <filename_encoding>
+	--mappings-are-raw Assume mappings are raw <key>=<value> lines
+	--filter-contents <cmd>  Pipe contents of each exported file through <cmd>
+	                         with <file-path> <hg-hash> <is-binary> as arguments
 "
 case "$1" in
     -h|--help)
@@ -48,8 +66,24 @@ case "$1" in
       echo "$LONG_USAGE"
       exit 0
 esac
-. "$(git --exec-path)/git-sh-setup"
-cd_to_toplevel
+
+IS_BARE=$(git rev-parse --is-bare-repository) \
+    || (echo "Could not find git repo" ; exit 1)
+if test "z$IS_BARE" != ztrue; then
+   # This is not a bare repo, cd to the toplevel
+   TOPLEVEL=$(git rev-parse --show-toplevel) \
+       || (echo "Could not find git repo toplevel" ; exit 1)
+   cd "$TOPLEVEL" || exit 1
+fi
+GIT_DIR=$(git rev-parse --git-dir) || (echo "Could not find git repo" ; exit 1)
+
+
+IGNORECASEWARN=""
+IGNORECASE=`git config core.ignoreCase`
+if [ "true" = "$IGNORECASE" ]; then
+    IGNORECASEWARN="true"
+fi;
+
 
 while case "$#" in 0) break ;; esac
 do
@@ -64,6 +98,7 @@ do
     --force)
       # pass --force to git-fast-import and hg-fast-export.py
       GFI_OPTS="$GFI_OPTS --force"
+      IGNORECASEWARN="";
       break
       ;;
     -*)
@@ -75,6 +110,22 @@ do
       ;;
   esac
   shift
+done
+
+if [ ! -z "$IGNORECASEWARN" ]; then
+    echo "Error: The option core.ignoreCase is set to true in the git"
+    echo "repository. This will produce empty changesets for renames that just"
+    echo "change the case of the file name."
+    echo "Use --force to skip this check or change the option with"
+    echo "git config core.ignoreCase false"
+    exit 1
+fi;
+
+# Make a backup copy of each state file
+for i in $SFX_STATE $SFX_MARKS $SFX_MAPPING $SFX_HEADS ; do
+    if [ -f "$GIT_DIR/$PFX-$i" ] ; then
+	cp "$GIT_DIR/$PFX-$i" "$GIT_DIR/$PFX-$i~"
+    fi
 done
 
 # for convenience: get default repo from state file
@@ -104,7 +155,7 @@ $(
   exec 4>&3 3>&1 1>&4 4>&-
   {
     _e1=0
-    GIT_DIR="$GIT_DIR" $PYTHON "$ROOT/hg-fast-export.py" \
+    GIT_DIR="$GIT_DIR" "$PYTHON" "$ROOT/hg-fast-export.py" \
       --repo "$REPO" \
       --marks "$GIT_DIR/$PFX-$SFX_MARKS" \
       --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
