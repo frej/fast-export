@@ -140,15 +140,32 @@ Large files
 -----------
 
 If the repository contains largefiles, make sure you clone the repository
-using the options `--all-largefiles`.
+using the options `--all-largefiles`. If you have some missing largefiles
+you'll be proposed a command to fetch the missing files from the mercurial
+repository. 
 
 To extract the largefiles from the git repository you will need the
-[git-lfs](https://git-lfs.github.com/). Prior to pushing your new git
+[git-lfs](https://git-lfs.github.com/) client. Prior to pushing your new git
 repository on a remote server, make sure to run the following command to
 configure the pre-push hooks.
 
 ```
 git lfs install
+```
+
+Once the repository is converted, you'll be able to push the
+largefiles to your git repository without much effort as the generated
+`.gitattribute` will inform the git client to upload the files. Be aware,
+such files cannot be uploaded to any repository server, it must implement
+the [git lfs server API](https://github.com/git-lfs/git-lfs/tree/master/docs/api).
+
+In the situation where you don't have the git-lfs client installed, you'll
+have a [git-lfs file pointer](https://github.com/git-lfs/git-lfs/blob/master/docs/spec.md)
+checked out, once the client is installed, you can launch the following
+command to retrieve your files.
+
+```
+git lfs pull
 ```
 
 Design
