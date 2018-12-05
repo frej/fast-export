@@ -145,6 +145,8 @@ class Filter:
         #Or don't pass, if you want to do some init code here
 ```
 
+Beyond the boilerplate initialization, you can see the one of the
+defined filter methods in the [dos2unix](./plugins/dos2unix) plugin.
 
 ```
 commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
