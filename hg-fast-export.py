@@ -11,6 +11,7 @@ from optparse import OptionParser
 import re
 import sys
 import os
+import pluginloader
 
 if sys.platform == "win32":
   # On Windows, sys.stdout is initially opened in text mode, which means that
@@ -123,7 +124,7 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files,hgtags,encoding='',filter_contents=None):
+def export_file_contents(ctx,manifest,files,hgtags,encoding='',filter_contents=None,plugins={}):
   count=0
   max=len(files)
   for file in files:
@@ -149,6 +150,15 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',filter_contents=N
       filter_ret=filter_proc.poll()
       if filter_ret:
         raise subprocess.CalledProcessError(filter_ret,filter_cmd)
+
+    if plugins and plugins['file_data_filters']:
+      file_data = {'filename':filename,'file_ctx':file_ctx,'data':d}
+      for filter in plugins['file_data_filters']:
+        filter(file_data)
+      d=file_data['data']
+      filename=file_data['filename']
+      file_ctx=file_data['file_ctx']
+
     wr('M %s inline %s' % (gitmode(manifest.flags(file)),
                            strip_leading_slash(filename)))
     wr('data %d' % len(d)) # had some trouble with size()
@@ -198,7 +208,8 @@ def strip_leading_slash(filename):
   return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
-                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',filter_contents=None):
+                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',filter_contents=None,
+                  plugins={}):
   def get_branchname(name):
     if brmap.has_key(name):
       return brmap[name]
@@ -211,6 +222,16 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   branch=get_branchname(branch)
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
+  author = get_author(desc,user,authors)
+
+  if plugins and plugins['commit_message_filters']:
+    commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
+    for filter in plugins['commit_message_filters']:
+      filter(commit_data)
+    branch = commit_data['branch']
+    parents = commit_data['parents']
+    author = commit_data['author']
+    desc = commit_data['desc']
 
   if len(parents)==0 and revision != 0:
     wr('reset refs/heads/%s' % branch)
@@ -218,7 +239,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   wr('commit refs/heads/%s' % branch)
   wr('mark :%d' % (revision+1))
   if sob:
-    wr('author %s %d %s' % (get_author(desc,user,authors),time,timezone))
+    wr('author %s %d %s' % (author,time,timezone))
   wr('committer %s %d %s' % (user,time,timezone))
   wr('data %d' % (len(desc)+1)) # wtf?
   wr(desc)
@@ -259,8 +280,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   removed=[strip_leading_slash(x) for x in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,fn_encoding,filter_contents)
-  export_file_contents(ctx,man,changed,hgtags,fn_encoding,filter_contents)
+  export_file_contents(ctx,man,added,hgtags,fn_encoding,filter_contents,plugins)
+  export_file_contents(ctx,man,changed,hgtags,fn_encoding,filter_contents,plugins)
   wr()
 
   return checkpoint(count)
@@ -396,7 +417,8 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',filter_contents=None):
+           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',filter_contents=None,
+           plugins={}):
   def check_cache(filename, contents):
     if len(contents) == 0:
       sys.stderr.write('Warning: %s does not contain any data, this will probably make an incremental import fail\n' % filename)
@@ -438,7 +460,8 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,encoding,fn_encoding,filter_contents)
+                    sob,brmap,hgtags,encoding,fn_encoding,filter_contents,
+                    plugins)
   if notes:
     for rev in range(min,max):
       c=export_note(ui,repo,rev,c,authors, encoding, rev == min and min != 0)
@@ -500,6 +523,10 @@ if __name__=='__main__':
       help="Assume mappings are raw <key>=<value> lines")
   parser.add_option("--filter-contents",dest="filter_contents",
       help="Pipe contents of each exported file through FILTER_CONTENTS <file-path> <hg-hash> <is-binary>")
+  parser.add_option("--plugin-path", type="string", dest="pluginpath",
+      help="Additional search path for plugins ")
+  parser.add_option("--plugin", action="append", type="string", dest="plugins",
+      help="Add a plugin with the given init string <name=init>")
 
   (options,args)=parser.parse_args()
 
@@ -538,13 +565,36 @@ if __name__=='__main__':
   if options.fn_encoding!=None:
     fn_encoding=options.fn_encoding
 
+  plugins=[]
+  if options.plugins!=None:
+    plugins+=options.plugins
+
   filter_contents=None
   if options.filter_contents!=None:
     import shlex
     filter_contents=shlex.split(options.filter_contents)
 
+  plugins_dict={}
+  plugins_dict['commit_message_filters']=[]
+  plugins_dict['file_data_filters']=[]
+
+  if plugins and options.pluginpath:
+    sys.stderr.write('Using additional plugin path: ' + options.pluginpath + '\n')
+
+  for plugin in plugins:
+    split = plugin.split('=')
+    name, opts = split[0], '='.join(split[1:])
+    i = pluginloader.get_plugin(name,options.pluginpath)
+    sys.stderr.write('Loaded plugin ' + i['name'] + ' from path: ' + i['path'] +' with opts: ' + opts + '\n')
+    plugin = pluginloader.load_plugin(i).build_filter(opts)
+    if hasattr(plugin,'file_data_filter') and callable(plugin.file_data_filter):
+      plugins_dict['file_data_filters'].append(plugin.file_data_filter)
+    if hasattr(plugin, 'commit_message_filter') and callable(plugin.commit_message_filter):
+      plugins_dict['commit_message_filters'].append(plugin.commit_message_filter)
+
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
                   options.headsfile, options.statusfile,
                   authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,filter_contents=filter_contents))
+                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,filter_contents=filter_contents,
+                  plugins=plugins_dict))
