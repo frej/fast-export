@@ -124,7 +124,7 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
-def export_file_contents(ctx,manifest,files,hgtags,encoding='',filter_contents=None,plugins={}):
+def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
   for file in files:
@@ -138,18 +138,6 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',filter_contents=N
       filename=file
     file_ctx=ctx.filectx(file)
     d=file_ctx.data()
-    if filter_contents:
-      import subprocess
-      filter_cmd=filter_contents + [filename,node.hex(file_ctx.filenode()),'1' if file_ctx.isbinary() else '0']
-      try:
-        filter_proc=subprocess.Popen(filter_cmd,stdin=subprocess.PIPE,stdout=subprocess.PIPE)
-        d,_=filter_proc.communicate(d)
-      except:
-        sys.stderr.write('Running filter-contents %s:\n' % filter_cmd)
-        raise
-      filter_ret=filter_proc.poll()
-      if filter_ret:
-        raise subprocess.CalledProcessError(filter_ret,filter_cmd)
 
     if plugins and plugins['file_data_filters']:
       file_data = {'filename':filename,'file_ctx':file_ctx,'data':d}
@@ -208,7 +196,7 @@ def strip_leading_slash(filename):
   return filename
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
-                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',filter_contents=None,
+                  branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',
                   plugins={}):
   def get_branchname(name):
     if brmap.has_key(name):
@@ -280,8 +268,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   removed=[strip_leading_slash(x) for x in removed]
 
   map(lambda r: wr('D %s' % r),removed)
-  export_file_contents(ctx,man,added,hgtags,fn_encoding,filter_contents,plugins)
-  export_file_contents(ctx,man,changed,hgtags,fn_encoding,filter_contents,plugins)
+  export_file_contents(ctx,man,added,hgtags,fn_encoding,plugins)
+  export_file_contents(ctx,man,changed,hgtags,fn_encoding,plugins)
   wr()
 
   return checkpoint(count)
@@ -417,7 +405,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',filter_contents=None,
+           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',
            plugins={}):
   def check_cache(filename, contents):
     if len(contents) == 0:
@@ -460,7 +448,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,encoding,fn_encoding,filter_contents,
+                    sob,brmap,hgtags,encoding,fn_encoding,
                     plugins)
   if notes:
     for rev in range(min,max):
@@ -569,10 +557,8 @@ if __name__=='__main__':
   if options.plugins!=None:
     plugins+=options.plugins
 
-  filter_contents=None
   if options.filter_contents!=None:
-    import shlex
-    filter_contents=shlex.split(options.filter_contents)
+    plugins+=['shell_filter_file_contents='+options.filter_contents]
 
   plugins_dict={}
   plugins_dict['commit_message_filters']=[]
@@ -596,5 +582,5 @@ if __name__=='__main__':
                   options.headsfile, options.statusfile,
                   authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
-                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,filter_contents=filter_contents,
+                  notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,
                   plugins=plugins_dict))
