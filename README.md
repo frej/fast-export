@@ -120,6 +120,57 @@ if [ "$3" == "1" ]; then cat; else dos2unix; fi
 -- End of crlf-filter.sh --
 ```
 
+
+Plugins
+-----------------
+
+hg-fast-export supports plugins to manipulate the file data and commit
+metadata. The plugins are enabled with the --plugin option. The value
+of said option is a plugin name (by folder in the plugins directory),
+and optionally, and equals-sign followed by an initialization string.
+
+There is a readme accompanying each of the bundled plugins, with a
+description of the usage. To create a new plugin, one must simply
+add a new folder under the `plugins` directory, with the name of the
+new plugin. Inside, there must be an `__init__.py` file, which contains
+at a minimum:
+
+```
+def build_filter(args):
+    return Filter(args)
+
+class Filter:
+    def __init__(self, args):
+        pass
+        #Or don't pass, if you want to do some init code here
+```
+
+Beyond the boilerplate initialization, you can see the two different
+defined filter methods in the [dos2unix](./plugins/dos2unix) and
+[branch_name_in_commit](./plugins/branch_name_in_commit) plugins.
+
+```
+commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
+
+def commit_message_filter(self,commit_data):
+```
+The `commit_message_filter` method is called for each commit, after parsing
+from hg, but before outputting to git. The dictionary `commit_data` contains the
+above attributes about the commit, and can be modified by any filter. The
+values in the dictionary after filters have been run are used to create the git
+commit.
+
+```
+file_data = {'filename':filename,'file_ctx':file_ctx,'d':d}
+
+def file_data_filter(self,file_data):
+```
+The `file_data_filter` method is called for each file within each commit.
+The dictionary `file_data` contains the above attributes about the file, and
+can be modified by any filter. `file_ctx` is the filecontext from the
+mercurial python library.  After all filters have been run, the values
+are used to add the file to the git commit.
+
 Notes/Limitations
 -----------------
 

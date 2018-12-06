@@ -58,6 +58,8 @@ Options:
 	--mappings-are-raw Assume mappings are raw <key>=<value> lines
 	--filter-contents <cmd>  Pipe contents of each exported file through <cmd>
 	                         with <file-path> <hg-hash> <is-binary> as arguments
+	--plugin <plugin=init>  Add a plugin with the given init string (repeatable)
+	--plugin-path <plugin-path> Add an additional plugin lookup path
 "
 case "$1" in
     -h|--help)

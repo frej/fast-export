@@ -1,2 +1,4 @@
+*.orig
 *.pyc
 .dotest
+.idea/
