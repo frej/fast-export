@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-
+#!/usr/bin/env python
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
@@ -111,7 +110,7 @@ def load_cache(filename,get_key=mangle_key):
 
 def save_cache(filename,cache):
   f=open(filename,'w+')
-  map(lambda x: f.write(':%s %s\n' % (str(x),str(cache.get(x)))),cache.keys())
+  list(map(lambda x: f.write(':%s %s\n' % (str(x),str(cache.get(x)))),list(cache.keys())))
   f.close()
 
 def get_git_sha1(name,type='heads'):
