@@ -70,6 +70,8 @@ Options:
 	-B <file> Read branch map from file
 	-T <file> Read tags map from file
 	-M <name> Set the default branch name (defaults to 'master')
+	-n        Do not perform built-in (broken in many cases) sanitizing
+                  of branch/tag names.
 	-o <name> Use <name> as branch namespace to track upstream (eg 'origin')
 	--hg-hash Annotate commits with the hg hash as git notes in the
                   hg namespace.

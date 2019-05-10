@@ -31,6 +31,10 @@ cfg_export_boundary=1000
 subrepo_cache={}
 submodule_mappings=None
 
+# True if fast export should automatically try to sanitize
+# author/branch/tag names.
+auto_sanitize = None
+
 def gitmode(flags):
   return 'l' in flags and '120000' or 'x' in flags and '100755' or '100644'
 
@@ -226,6 +230,8 @@ def sanitize_name(name,what="branch", mapping={}):
     if name[0] == '.': return '_'+name[1:]
     return name
 
+  if not auto_sanitize:
+    return mapping.get(name,name)
   n=mapping.get(name,name)
   p=re.compile('([[ ~^:?\\\\*]|\.\.)')
   n=p.sub('_', n)
@@ -532,6 +538,9 @@ if __name__=='__main__':
 
   parser=OptionParser()
 
+  parser.add_option("-n", "--no-auto-sanitize",action="store_false",
+      dest="auto_sanitize",default=True,
+      help="Do not perform built-in (broken in many cases) sanitizing of names")
   parser.add_option("-m","--max",type="int",dest="max",
       help="Maximum hg revision to import")
   parser.add_option("--mapping",dest="mappingfile",
@@ -580,6 +589,7 @@ if __name__=='__main__':
   (options,args)=parser.parse_args()
 
   m=-1
+  auto_sanitize = options.auto_sanitize
   if options.max!=None: m=options.max
 
   if options.marksfile==None: bail(parser,'--marks')

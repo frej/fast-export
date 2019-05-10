@@ -101,6 +101,12 @@ name the -B and -T options allow a mapping file to be specified to
 rename branches and tags (respectively). The syntax of the mapping
 file is the same as for the author mapping.
 
+When the -B and -T flags are used, you will probably want to use the
+-n flag to disable the built-in (broken in many cases) sanitizing of
+branch/tag names. In the future -n will become the default, but in
+order to not break existing incremental conversions, the default
+remains with the old behavior.
+
 Content filtering
 -----------------
 
