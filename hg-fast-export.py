@@ -137,18 +137,9 @@ def remove_gitmodules(ctx):
 def refresh_gitmodules(ctx):
   """Updates list of ctx submodules according to .hgsubstate file"""
   remove_gitmodules(ctx)
-  # Read .hgsubstate file in order to find the revision of each subrepo
-  data=ctx.filectx(".hgsubstate").data()
-  subHashes={}
-  for line in data.split('\n'):
-    if line.strip()=="":
-      continue
-    cols=line.split(' ')
-    subHashes[cols[1]]=cols[0]
-
   gitmodules=""
   # Create the .gitmodules file and all submodules
-  for name in ctx.substate:
+  for name,subrepo_info in ctx.substate.items():
     gitRepoLocation=submodule_mappings[name] + "/.git"
 
     # Populate the cache to map mercurial revision to git revision
@@ -157,16 +148,19 @@ def refresh_gitmodules(ctx):
                            load_cache(gitRepoLocation+"/hg2git-marks",
                                       lambda s: int(s)-1))
 
-    (mapping_cache, marks_cache)=subrepo_cache[name]
-    if subHashes[name] in mapping_cache:
-      revnum=mapping_cache[subHashes[name]]
+    (mapping_cache,marks_cache)=subrepo_cache[name]
+    subrepo_hash=subrepo_info[1]
+    if subrepo_hash in mapping_cache:
+      revnum=mapping_cache[subrepo_hash]
       gitSha=marks_cache[int(revnum)]
-      wr('M 160000 %s %s' % (gitSha, name))
-      sys.stderr.write("Adding submodule %s, revision %s->%s\n"
-                       % (name,subHashes[name],gitSha))
-      gitmodules+='[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name, name, submodule_mappings[name])
+      wr('M 160000 %s %s' % (gitSha,name))
+      sys.stderr.write("Adding/updating submodule %s, revision %s->%s\n"
+                       % (name,subrepo_hash,gitSha))
+      gitmodules+='[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
+        submodule_mappings[name])
     else:
-      sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" % (subHashes[name],name,gitRepoLocation))
+      sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" %
+        (subrepo_hash,name,gitRepoLocation))
 
   if len(gitmodules):
     wr('M 100644 inline .gitmodules')
