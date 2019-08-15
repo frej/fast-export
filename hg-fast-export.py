@@ -127,52 +127,58 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
+def remove_gitmodules(ctx):
+  """Removes all submodules"""
+  # Remove all submodules as we don't detect deleted submodules properly
+  # in any other way. We will add the ones not deleted back again below.
+  for module in submodule_mappings.keys():
+    wr('D %s' % module)
+
+def refresh_gitmodules(ctx):
+  """Updates list of ctx submodules according to .hgsubstate file"""
+  remove_gitmodules(ctx)
+  # Read .hgsubstate file in order to find the revision of each subrepo
+  data=ctx.filectx(".hgsubstate").data()
+  subHashes={}
+  for line in data.split('\n'):
+    if line.strip()=="":
+      continue
+    cols=line.split(' ')
+    subHashes[cols[1]]=cols[0]
+
+  gitmodules=""
+  # Create the .gitmodules file and all submodules
+  for name in ctx.substate:
+    gitRepoLocation=submodule_mappings[name] + "/.git"
+
+    # Populate the cache to map mercurial revision to git revision
+    if not name in subrepo_cache:
+      subrepo_cache[name]=(load_cache(gitRepoLocation+"/hg2git-mapping"),
+                           load_cache(gitRepoLocation+"/hg2git-marks",
+                                      lambda s: int(s)-1))
+
+    (mapping_cache, marks_cache)=subrepo_cache[name]
+    if subHashes[name] in mapping_cache:
+      revnum=mapping_cache[subHashes[name]]
+      gitSha=marks_cache[int(revnum)]
+      wr('M 160000 %s %s' % (gitSha, name))
+      sys.stderr.write("Adding submodule %s, revision %s->%s\n"
+                       % (name,subHashes[name],gitSha))
+      gitmodules+='[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name, name, submodule_mappings[name])
+    else:
+      sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" % (subHashes[name],name,gitRepoLocation))
+
+  if len(gitmodules):
+    wr('M 100644 inline .gitmodules')
+    wr('data %d' % (len(gitmodules)+1))
+    wr(gitmodules)
+
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
   for file in files:
     if submodule_mappings and ctx.substate and file==".hgsubstate":
-      # Remove all submodules as we don't detect deleted submodules properly
-      # in any other way. We will add the ones not deleted back again below.
-      for module in submodule_mappings.keys():
-        wr('D %s' % module)
-
-      # Read .hgsubstate file in order to find the revision of each subrepo
-      data=ctx.filectx(file).data()
-      subHashes={}
-      for line in data.split('\n'):
-        if line.strip()=="":
-          continue
-        cols=line.split(' ')
-        subHashes[cols[1]]=cols[0]
-
-      gitmodules=""
-      # Create the .gitmodules file and all submodules
-      for name in ctx.substate:
-        gitRepoLocation=submodule_mappings[name] + "/.git"
-
-        # Populate the cache to map mercurial revision to git revision
-        if not name in subrepo_cache:
-          subrepo_cache[name]=(load_cache(gitRepoLocation+"/hg2git-mapping"),
-                               load_cache(gitRepoLocation+"/hg2git-marks",
-                                          lambda s: int(s)-1))
-
-        (mapping_cache, marks_cache)=subrepo_cache[name]
-        if subHashes[name] in mapping_cache:
-          revnum=mapping_cache[subHashes[name]]
-          gitSha=marks_cache[int(revnum)]
-          wr('M 160000 %s %s' % (gitSha, name))
-          sys.stderr.write("Adding submodule %s, revision %s->%s\n"
-                           % (name,subHashes[name],gitSha))
-          gitmodules+='[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name, name, submodule_mappings[name])
-        else:
-          sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" % (subHashes[name],name,gitRepoLocation))
-
-      if len(gitmodules):
-        wr('M 100644 inline .gitmodules')
-        wr('data %d' % (len(gitmodules)+1))
-        wr(gitmodules)
-
+      refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == ".hgtags":
       sys.stderr.write('Skip %s\n' % (file))
