@@ -128,11 +128,14 @@ def get_author(logmessage,committer,authors):
   return committer
 
 def remove_gitmodules(ctx):
-  """Removes all submodules"""
-  # Remove all submodules as we don't detect deleted submodules properly
-  # in any other way. We will add the ones not deleted back again below.
-  for module in submodule_mappings.keys():
-    wr('D %s' % module)
+  """Removes all submodules of ctx parents"""
+  # Removing all submoduies coming from all parents is safe, as the submodules
+  # of the current commit will be re-added below. A possible optimization would
+  # be to only remove the submodules of the first parent.
+  for parent_ctx in ctx.parents():
+    for submodule in parent_ctx.substate.keys():
+      wr('D %s' % submodule)
+  wr('D .gitmodules')
 
 def refresh_gitmodules(ctx):
   """Updates list of ctx submodules according to .hgsubstate file"""
@@ -171,7 +174,7 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
   for file in files:
-    if submodule_mappings and ctx.substate and file==".hgsubstate":
+    if submodule_mappings and file==".hgsubstate":
       refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == ".hgtags":
@@ -311,6 +314,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     if fn_encoding:
       filename=filename.decode(fn_encoding).encode('utf8')
     filename=strip_leading_slash(filename)
+    if filename=='.hgsubstate':
+      remove_gitmodules(ctx)
     wr('D %s' % filename)
 
   export_file_contents(ctx,man,added,hgtags,fn_encoding,plugins)
