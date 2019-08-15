@@ -313,12 +313,12 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   sys.stderr.write('%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
       (branch,type,revision+1,max,len(added),len(changed),len(removed)))
 
-  if fn_encoding:
-    removed=[r.decode(fn_encoding).encode('utf8') for r in removed]
+  for filename in removed:
+    if fn_encoding:
+      filename=filename.decode(fn_encoding).encode('utf8')
+    filename=strip_leading_slash(filename)
+    wr('D %s' % filename)
 
-  removed=[strip_leading_slash(x) for x in removed]
-
-  map(lambda r: wr('D %s' % r),removed)
   export_file_contents(ctx,man,added,hgtags,fn_encoding,plugins)
   export_file_contents(ctx,man,changed,hgtags,fn_encoding,plugins)
   wr()
