@@ -127,52 +127,55 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
+def remove_gitmodules(ctx):
+  """Removes all submodules of ctx parents"""
+  # Removing all submoduies coming from all parents is safe, as the submodules
+  # of the current commit will be re-added below. A possible optimization would
+  # be to only remove the submodules of the first parent.
+  for parent_ctx in ctx.parents():
+    for submodule in parent_ctx.substate.keys():
+      wr('D %s' % submodule)
+  wr('D .gitmodules')
+
+def refresh_gitmodules(ctx):
+  """Updates list of ctx submodules according to .hgsubstate file"""
+  remove_gitmodules(ctx)
+  gitmodules=""
+  # Create the .gitmodules file and all submodules
+  for name,subrepo_info in ctx.substate.items():
+    gitRepoLocation=submodule_mappings[name] + "/.git"
+
+    # Populate the cache to map mercurial revision to git revision
+    if not name in subrepo_cache:
+      subrepo_cache[name]=(load_cache(gitRepoLocation+"/hg2git-mapping"),
+                           load_cache(gitRepoLocation+"/hg2git-marks",
+                                      lambda s: int(s)-1))
+
+    (mapping_cache,marks_cache)=subrepo_cache[name]
+    subrepo_hash=subrepo_info[1]
+    if subrepo_hash in mapping_cache:
+      revnum=mapping_cache[subrepo_hash]
+      gitSha=marks_cache[int(revnum)]
+      wr('M 160000 %s %s' % (gitSha,name))
+      sys.stderr.write("Adding/updating submodule %s, revision %s->%s\n"
+                       % (name,subrepo_hash,gitSha))
+      gitmodules+='[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
+        submodule_mappings[name])
+    else:
+      sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" %
+        (subrepo_hash,name,gitRepoLocation))
+
+  if len(gitmodules):
+    wr('M 100644 inline .gitmodules')
+    wr('data %d' % (len(gitmodules)+1))
+    wr(gitmodules)
+
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
   for file in files:
-    if submodule_mappings and ctx.substate and file==".hgsubstate":
-      # Remove all submodules as we don't detect deleted submodules properly
-      # in any other way. We will add the ones not deleted back again below.
-      for module in submodule_mappings.keys():
-        wr('D %s' % module)
-
-      # Read .hgsubstate file in order to find the revision of each subrepo
-      data=ctx.filectx(file).data()
-      subHashes={}
-      for line in data.split('\n'):
-        if line.strip()=="":
-          continue
-        cols=line.split(' ')
-        subHashes[cols[1]]=cols[0]
-
-      gitmodules=""
-      # Create the .gitmodules file and all submodules
-      for name in ctx.substate:
-        gitRepoLocation=submodule_mappings[name] + "/.git"
-
-        # Populate the cache to map mercurial revision to git revision
-        if not name in subrepo_cache:
-          subrepo_cache[name]=(load_cache(gitRepoLocation+"/hg2git-mapping"),
-                               load_cache(gitRepoLocation+"/hg2git-marks",
-                                          lambda s: int(s)-1))
-
-        (mapping_cache, marks_cache)=subrepo_cache[name]
-        if subHashes[name] in mapping_cache:
-          revnum=mapping_cache[subHashes[name]]
-          gitSha=marks_cache[int(revnum)]
-          wr('M 160000 %s %s' % (gitSha, name))
-          sys.stderr.write("Adding submodule %s, revision %s->%s\n"
-                           % (name,subHashes[name],gitSha))
-          gitmodules+='[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name, name, submodule_mappings[name])
-        else:
-          sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" % (subHashes[name],name,gitRepoLocation))
-
-      if len(gitmodules):
-        wr('M 100644 inline .gitmodules')
-        wr('data %d' % (len(gitmodules)+1))
-        wr(gitmodules)
-
+    if submodule_mappings and file==".hgsubstate":
+      refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == ".hgtags":
       sys.stderr.write('Skip %s\n' % (file))
@@ -307,12 +310,14 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   sys.stderr.write('%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
       (branch,type,revision+1,max,len(added),len(changed),len(removed)))
 
-  if fn_encoding:
-    removed=[r.decode(fn_encoding).encode('utf8') for r in removed]
+  for filename in removed:
+    if fn_encoding:
+      filename=filename.decode(fn_encoding).encode('utf8')
+    filename=strip_leading_slash(filename)
+    if filename=='.hgsubstate':
+      remove_gitmodules(ctx)
+    wr('D %s' % filename)
 
-  removed=[strip_leading_slash(x) for x in removed]
-
-  map(lambda r: wr('D %s' % r),removed)
   export_file_contents(ctx,man,added,hgtags,fn_encoding,plugins)
   export_file_contents(ctx,man,changed,hgtags,fn_encoding,plugins)
   wr()
