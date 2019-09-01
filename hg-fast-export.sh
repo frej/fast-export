@@ -26,7 +26,29 @@ SFX_MARKS="marks"
 SFX_HEADS="heads"
 SFX_STATE="state"
 GFI_OPTS=""
-PYTHON=${PYTHON:-python2}
+
+if [ -z "${PYTHON}" ]; then
+    # $PYTHON is not set, so we try to find a working python 2.7 to
+    # use. PEP 394 tells us to use 'python2', otherwise try plain
+    # 'python'.
+    if command -v python2 > /dev/null; then
+	PYTHON="python2"
+    elif command -v python > /dev/null; then
+	PYTHON="python"
+    else
+        echo "Could not find any python interpreter, please use the 'PYTHON'" \
+	     "environment variable to specify the interpreter to use."
+        exit 1
+    fi
+fi
+
+# Check that the python specified by the user or autodetected above is
+# >= 2.7 and < 3.
+if ! ${PYTHON} -c 'import sys; v=sys.version_info; exit(0 if v.major == 2 and v.minor >= 7 else 1)' > /dev/null 2>&1 ; then
+    echo "${PYTHON} is not a working python 2.7 interpreter, please use the" \
+	 "'PYTHON' environment variable to specify the interpreter to use."
+    exit 1
+fi
 
 USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
