@@ -4,25 +4,27 @@ hg-fast-export.(sh|py) - mercurial to git converter using git-fast-import
 Legal
 -----
 
-Most hg-* scripts are licensed under the [MIT license]
-(http://www.opensource.org/licenses/mit-license.php) and were written
+Most hg-* scripts are licensed under the [MIT license] and were written
 by Rocco Rutte <pdmef@gmx.net> with hints and help from the git list and
 \#mercurial on freenode. hg-reset.py is licensed under GPLv2 since it
 copies some code from the mercurial sources.
 
 The current maintainer is Frej Drejhammar <frej.drejhammar@gmail.com>.
 
+[MIT license]: http://www.opensource.org/licenses/mit-license.php
+
 Support
 -------
 
 If you have problems with hg-fast-export or have found a bug, please
-create an issue at the [github issue tracker]
-(https://github.com/frej/fast-export/issues). Before creating a new
+create an issue at the [github issue tracker]. Before creating a new
 issue, check that your problem has not already been addressed in an
 already closed issue. Do not contact the maintainer directly unless
 you want to report a security bug. That way the next person having the
 same problem can benefit from the time spent solving the problem the
 first time.
+
+[github issue tracker]: https://github.com/frej/fast-export/issues
 
 System Requirements
 -------------------
