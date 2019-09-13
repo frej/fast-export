@@ -111,7 +111,8 @@ def load_cache(filename,get_key=mangle_key):
 
 def save_cache(filename,cache):
   f=open(filename,'w+')
-  map(lambda x: f.write(':%s %s\n' % (str(x),str(cache.get(x)))),cache.keys())
+  for x in cache.keys():
+    f.write(':%s %s\n' % (str(x), str(cache.get(x))))
   f.close()
 
 def get_git_sha1(name,type='heads'):

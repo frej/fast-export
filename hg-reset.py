@@ -24,7 +24,7 @@ def heads(ui,repo,start=None,stop=None,max=None):
   heads = {startrev: 1}
 
   parentrevs = repo.changelog.parentrevs
-  for r in xrange(startrev + 1, max):
+  for r in range(startrev + 1, max):
     for p in parentrevs(r):
       if p in reachable:
         if r not in stoprevs:
@@ -117,19 +117,24 @@ if __name__=='__main__':
   stale,changed,unchanged=get_branches(ui,repo,heads_cache,marks_cache,mapping_cache,options.revision+1)
   good,bad=get_tags(ui,repo,marks_cache,mapping_cache,options.revision+1)
 
-  print "Possibly stale branches:"
-  map(lambda b: sys.stdout.write('\t%s\n' % b),stale.keys())
+  print("Possibly stale branches:")
+  for b in stale.keys():
+    sys.stdout.write('\t%s\n' % b)
 
-  print "Possibly stale tags:"
-  map(lambda b: sys.stdout.write('\t%s on %s (r%s)\n' % (b[0],b[1],b[3])),bad)
+  print("Possibly stale tags:")
+  for b in bad:
+    sys.stdout.write('\t%s on %s (r%s)\n' % (b[0], b[1], b[3]))
 
-  print "Unchanged branches:"
-  map(lambda b: sys.stdout.write('\t%s (r%s)\n' % (b[0],b[2])),unchanged)
+  print("Unchanged branches:")
+  for b in unchanged:
+    sys.stdout.write('\t%s (r%s)\n' % (b[0], b[2]))
 
-  print "Unchanged tags:"
-  map(lambda b: sys.stdout.write('\t%s on %s (r%s)\n' % (b[0],b[1],b[3])),good)
+  print("Unchanged tags:")
+  for b in good:
+    sys.stdout.write('\t%s on %s (r%s)\n' % (b[0], b[1], b[3]))
 
-  print "Reset branches in '%s' to:" % options.headsfile
-  map(lambda b: sys.stdout.write('\t:%s %s\n\t\t(r%s: %s: %s)\n' % (b[0],b[1],b[2],b[4],b[3])),changed)
+  print("Reset branches in '%s' to:" % options.headsfile)
+  for b in changed:
+    sys.stdout.write('\t:%s %s\n\t\t(r%s: %s: %s)\n' % (b[0], b[1], b[2], b[4], b[3]))
 
-  print "Reset ':tip' in '%s' to '%d'" % (options.statusfile,options.revision)
+  print("Reset ':tip' in '%s' to '%d'" % (options.statusfile,options.revision))

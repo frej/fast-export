@@ -193,8 +193,8 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
 
     if plugins and plugins['file_data_filters']:
       file_data = {'filename':filename,'file_ctx':file_ctx,'data':d}
-      for filter in plugins['file_data_filters']:
-        filter(file_data)
+      for filter_fn in plugins['file_data_filters']:
+        filter_fn(file_data)
       d=file_data['data']
       filename=file_data['filename']
       file_ctx=file_data['file_ctx']
@@ -253,7 +253,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
                   branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',
                   plugins={}):
   def get_branchname(name):
-    if brmap.has_key(name):
+    if name in brmap:
       return brmap[name]
     n=sanitize_name(name, "branch", branchesmap)
     brmap[name]=n
@@ -268,8 +268,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   if plugins and plugins['commit_message_filters']:
     commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
-    for filter in plugins['commit_message_filters']:
-      filter(commit_data)
+    for filter_fn in plugins['commit_message_filters']:
+      filter_fn(commit_data)
     branch = commit_data['branch']
     parents = commit_data['parents']
     author = commit_data['author']
@@ -293,7 +293,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   if len(parents) == 0:
     # first revision: feed in full manifest
-    added=man.keys()
+    added=list(man.keys())
     added.sort()
     type='full'
   else:
@@ -431,9 +431,9 @@ def branchtip(repo, heads):
 
 def verify_heads(ui,repo,cache,force,branchesmap):
   branches={}
-  for bn, heads in repo.branchmap().iteritems():
+  for bn, heads in repo.branchmap().items():
     branches[bn] = branchtip(repo, heads)
-  l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
+  l=[(-repo.changelog.rev(n), n, t) for t, n in list(branches.items())]
   l.sort()
 
   # get list of hg's branches to verify, don't take all git has
