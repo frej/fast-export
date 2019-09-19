@@ -216,3 +216,45 @@ Submitting Patches
 Please use the issue-tracker at github
 https://github.com/frej/fast-export to report bugs and submit
 patches.
+
+Frequent Problems
+=================
+
+* git fast-import crashes with: `error: cannot lock ref 'refs/heads/...`
+
+  Branch names in git behave as file names (as they are just files and
+  sub-directories under `refs/heads/`, and a path cannot name both a
+  file and a directory, i.e. the branches `a` and `a/b` can never
+  exist at the same time in a git repo.
+
+  Use a mapping file to rename the troublesome branch names.
+
+* `Branch [<branch-name>] modified outside hg-fast-export` but I have
+  not touched the repo!
+
+  If you are running fast-export on a case-preserving but
+  case-insensitive file system (Windows and OSX), this will make git
+  treat `A` and `a` as the same branch. The solution is to use a
+  mapping file to rename branches which only differ in case.
+
+* My mapping file does not seem to work when I rename the branch `git
+  fast-import` crashes on!
+
+  fast-export (imperfectly) mangles branch names it thinks won't be
+  valid. The mechanism cannot be removed as it would break already
+  existing incremental imports that expects it. When fast export
+  mangles a name, it prints out a warning of the form `Warning:
+  sanitized branch [<unmangled>] to [<mangled>]`. If `git fast-import`
+  crashes on `<mangled>`, you need to put `<unmangled>` into the
+  mapping file.
+
+* fast-import mangles valid git branch names which I have remapped!
+
+  Use the `-n` flag to hg-fast-export.sh.
+
+* `git status` reports that all files are scheduled for deletion after
+  the initial conversion.
+
+  By design fast export does not touch your working directory, so to
+  git it looks like you have deleted all files, when in fact they have
+  never been checked out. Just do a checkout of the branch you want.
