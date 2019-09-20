@@ -5,7 +5,7 @@
 
 from mercurial import hg,util,ui,templatefilters
 from mercurial import error as hgerror
-from mercurial.scmutil import revsymbol,binnode
+from mercurial.scmutil import revsymbol,binnode,revsingle
 
 import re
 import os
@@ -87,6 +87,9 @@ def get_changeset(ui,repo,revision,authors={},encoding=''):
     desc=desc.decode(encoding).encode('utf8')
   tz="%+03d%02d" % (-timezone / 3600, ((-timezone % 3600) / 60))
   branch=get_branch(extra.get('branch','master'))
+  bookmarks = repo.nodebookmarks(node)
+  if bookmarks: branch="%s_%s"%(branch,bookmarks[0])
+  if 'bookmarks' not in extra: extra['bookmakrs'] = bookmarks
   return (node,manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
 
 def mangle_key(key):
