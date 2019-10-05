@@ -4,25 +4,27 @@ hg-fast-export.(sh|py) - mercurial to git converter using git-fast-import
 Legal
 -----
 
-Most hg-* scripts are licensed under the [MIT license]
-(http://www.opensource.org/licenses/mit-license.php) and were written
+Most hg-* scripts are licensed under the [MIT license] and were written
 by Rocco Rutte <pdmef@gmx.net> with hints and help from the git list and
 \#mercurial on freenode. hg-reset.py is licensed under GPLv2 since it
 copies some code from the mercurial sources.
 
 The current maintainer is Frej Drejhammar <frej.drejhammar@gmail.com>.
 
+[MIT license]: http://www.opensource.org/licenses/mit-license.php
+
 Support
 -------
 
 If you have problems with hg-fast-export or have found a bug, please
-create an issue at the [github issue tracker]
-(https://github.com/frej/fast-export/issues). Before creating a new
+create an issue at the [github issue tracker]. Before creating a new
 issue, check that your problem has not already been addressed in an
 already closed issue. Do not contact the maintainer directly unless
 you want to report a security bug. That way the next person having the
 same problem can benefit from the time spent solving the problem the
 first time.
+
+[github issue tracker]: https://github.com/frej/fast-export/issues
 
 System Requirements
 -------------------
@@ -98,6 +100,12 @@ As Git and Mercurial have differ in what is a valid branch and tag
 name the -B and -T options allow a mapping file to be specified to
 rename branches and tags (respectively). The syntax of the mapping
 file is the same as for the author mapping.
+
+When the -B and -T flags are used, you will probably want to use the
+-n flag to disable the built-in (broken in many cases) sanitizing of
+branch/tag names. In the future -n will become the default, but in
+order to not break existing incremental conversions, the default
+remains with the old behavior.
 
 Content filtering
 -----------------
@@ -208,3 +216,45 @@ Submitting Patches
 Please use the issue-tracker at github
 https://github.com/frej/fast-export to report bugs and submit
 patches.
+
+Frequent Problems
+=================
+
+* git fast-import crashes with: `error: cannot lock ref 'refs/heads/...`
+
+  Branch names in git behave as file names (as they are just files and
+  sub-directories under `refs/heads/`, and a path cannot name both a
+  file and a directory, i.e. the branches `a` and `a/b` can never
+  exist at the same time in a git repo.
+
+  Use a mapping file to rename the troublesome branch names.
+
+* `Branch [<branch-name>] modified outside hg-fast-export` but I have
+  not touched the repo!
+
+  If you are running fast-export on a case-preserving but
+  case-insensitive file system (Windows and OSX), this will make git
+  treat `A` and `a` as the same branch. The solution is to use a
+  mapping file to rename branches which only differ in case.
+
+* My mapping file does not seem to work when I rename the branch `git
+  fast-import` crashes on!
+
+  fast-export (imperfectly) mangles branch names it thinks won't be
+  valid. The mechanism cannot be removed as it would break already
+  existing incremental imports that expects it. When fast export
+  mangles a name, it prints out a warning of the form `Warning:
+  sanitized branch [<unmangled>] to [<mangled>]`. If `git fast-import`
+  crashes on `<mangled>`, you need to put `<unmangled>` into the
+  mapping file.
+
+* fast-import mangles valid git branch names which I have remapped!
+
+  Use the `-n` flag to hg-fast-export.sh.
+
+* `git status` reports that all files are scheduled for deletion after
+  the initial conversion.
+
+  By design fast export does not touch your working directory, so to
+  git it looks like you have deleted all files, when in fact they have
+  never been checked out. Just do a checkout of the branch you want.
