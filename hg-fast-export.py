@@ -616,7 +616,7 @@ if __name__=='__main__':
 
   t={}
   if options.tagsfile!=None:
-    t=load_mapping('tags', options.tagsfile, True)
+    t=load_mapping('tags', options.tagsfile, options.raw_mappings)
 
   if options.default_branch!=None:
     set_default_branch(options.default_branch)
