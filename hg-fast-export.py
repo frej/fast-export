@@ -260,6 +260,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     return n
 
   (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors,encoding)
+  if repo[revnode].hidden():
+    return count
 
   branch=get_branchname(branch)
 
@@ -332,6 +334,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
 def export_note(ui,repo,revision,count,authors,encoding,is_first):
   (revnode,_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
+  if repo[revnode].hidden():
+    return count
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
 
@@ -449,7 +453,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
   # verify that branch has exactly one head
   t={}
-  for h in repo.heads():
+  for h in repo.filtered('visible').heads():
     (_,_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
     if t.get(branch,False):
       sys.stderr.write('Error: repository has at least one unnamed head: hg r%s\n' %
@@ -497,12 +501,16 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
 
   for rev in range(0,max):
   	(revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
+  	if repo[revnode].hidden():
+  		continue
   	mapping_cache[revnode.encode('hex_codec')] = str(rev)
 
   if submodule_mappings:
     # Make sure that all submodules are registered in the submodule-mappings file
     for rev in range(0,max):
       ctx=revsymbol(repo,str(rev))
+      if ctx.hidden():
+        continue
       if ctx.substate:
         for key in ctx.substate:
           if key not in submodule_mappings:
