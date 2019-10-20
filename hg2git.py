@@ -35,7 +35,9 @@ def setup_repo(url):
   except TypeError:
     myui=ui.ui()
     myui.setconfig('ui', 'interactive', 'off')
-  return myui,hg.repository(myui,url)
+    # Avoids a warning when the repository has obsolete markers
+    myui.setconfig('experimental', 'evolution.createmarkers', True)
+  return myui,hg.repository(myui,url).unfiltered()
 
 def fixup_user(user,authors):
   user=user.strip("\"")
