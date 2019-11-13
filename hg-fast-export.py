@@ -497,16 +497,17 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
   # verify that branch has exactly one head
   t={}
+  unnamed_heads=False
   for h in repo.filtered(b'visible').heads():
     (_,_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
     if t.get(branch,False):
       stderr_buffer.write(
-        b'Error: repository has at least one unnamed head: hg r%d\n'
+        b'Error: repository has an unnamed head: hg r%d\n'
         % repo.changelog.rev(h)
       )
-      if not force: return False
+      unnamed_heads=True
     t[branch]=True
-
+  if unnamed_heads and not force: return False
   return True
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
