@@ -304,7 +304,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   author = get_author(desc,user,authors)
 
   if plugins and plugins['commit_message_filters']:
-    commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
+    commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision}
     for filter in plugins['commit_message_filters']:
       filter(commit_data)
     branch = commit_data['branch']

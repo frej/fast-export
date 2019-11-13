@@ -167,7 +167,7 @@ defined filter methods in the [dos2unix](./plugins/dos2unix) and
 [branch_name_in_commit](./plugins/branch_name_in_commit) plugins.
 
 ```
-commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
+commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision}
 
 def commit_message_filter(self,commit_data):
 ```
