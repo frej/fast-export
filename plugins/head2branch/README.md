@@ -6,4 +6,4 @@ the first divergent commit for that head.  The revision number for the commit
 should be in decimal form.
 
 To use the plugin, add
-`--plugin create_branch=name,<rev>`.
+`--plugin head2branch=name,<rev>`.
