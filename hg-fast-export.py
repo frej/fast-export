@@ -141,6 +141,13 @@ def remove_gitmodules(ctx):
       wr('D %s' % submodule)
   wr('D .gitmodules')
 
+def refresh_git_submodule(name,subrepo_info):
+  wr('M 160000 %s %s' % (subrepo_info[1],name))
+  sys.stderr.write("Adding/updating submodule %s, revision %s\n"
+                   % (name,subrepo_info[1]))
+  return '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
+    subrepo_info[0])
+
 def refresh_hg_submodule(name,subrepo_info):
   gitRepoLocation=submodule_mappings[name] + "/.git"
 
@@ -171,7 +178,9 @@ def refresh_gitmodules(ctx):
   gitmodules=""
   # Create the .gitmodules file and all submodules
   for name,subrepo_info in ctx.substate.items():
-    if name in submodule_mappings:
+    if subrepo_info[2]=='git':
+      gitmodules+=refresh_git_submodule(name,subrepo_info)
+    elif submodule_mappings and name in submodule_mappings:
       gitmodules+=refresh_hg_submodule(name,subrepo_info)
 
   if len(gitmodules):
@@ -183,7 +192,7 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
   for file in files:
-    if submodule_mappings and file==".hgsubstate":
+    if file==".hgsubstate":
       refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == ".hgtags":
