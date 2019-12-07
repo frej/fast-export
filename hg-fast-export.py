@@ -141,33 +141,47 @@ def remove_gitmodules(ctx):
       wr('D %s' % submodule)
   wr('D .gitmodules')
 
+def refresh_git_submodule(name,subrepo_info):
+  wr('M 160000 %s %s' % (subrepo_info[1],name))
+  sys.stderr.write("Adding/updating submodule %s, revision %s\n"
+                   % (name,subrepo_info[1]))
+  return '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
+    subrepo_info[0])
+
+def refresh_hg_submodule(name,subrepo_info):
+  gitRepoLocation=submodule_mappings[name] + "/.git"
+
+  # Populate the cache to map mercurial revision to git revision
+  if not name in subrepo_cache:
+    subrepo_cache[name]=(load_cache(gitRepoLocation+"/hg2git-mapping"),
+                         load_cache(gitRepoLocation+"/hg2git-marks",
+                                    lambda s: int(s)-1))
+
+  (mapping_cache,marks_cache)=subrepo_cache[name]
+  subrepo_hash=subrepo_info[1]
+  if subrepo_hash in mapping_cache:
+    revnum=mapping_cache[subrepo_hash]
+    gitSha=marks_cache[int(revnum)]
+    wr('M 160000 %s %s' % (gitSha,name))
+    sys.stderr.write("Adding/updating submodule %s, revision %s->%s\n"
+                     % (name,subrepo_hash,gitSha))
+    return '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
+      submodule_mappings[name])
+  else:
+    sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" %
+      (subrepo_hash,name,gitRepoLocation))
+    return ''
+
 def refresh_gitmodules(ctx):
   """Updates list of ctx submodules according to .hgsubstate file"""
   remove_gitmodules(ctx)
   gitmodules=""
   # Create the .gitmodules file and all submodules
   for name,subrepo_info in ctx.substate.items():
-    gitRepoLocation=submodule_mappings[name] + "/.git"
-
-    # Populate the cache to map mercurial revision to git revision
-    if not name in subrepo_cache:
-      subrepo_cache[name]=(load_cache(gitRepoLocation+"/hg2git-mapping"),
-                           load_cache(gitRepoLocation+"/hg2git-marks",
-                                      lambda s: int(s)-1))
-
-    (mapping_cache,marks_cache)=subrepo_cache[name]
-    subrepo_hash=subrepo_info[1]
-    if subrepo_hash in mapping_cache:
-      revnum=mapping_cache[subrepo_hash]
-      gitSha=marks_cache[int(revnum)]
-      wr('M 160000 %s %s' % (gitSha,name))
-      sys.stderr.write("Adding/updating submodule %s, revision %s->%s\n"
-                       % (name,subrepo_hash,gitSha))
-      gitmodules+='[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
-        submodule_mappings[name])
-    else:
-      sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" %
-        (subrepo_hash,name,gitRepoLocation))
+    if subrepo_info[2]=='git':
+      gitmodules+=refresh_git_submodule(name,subrepo_info)
+    elif submodule_mappings and name in submodule_mappings:
+      gitmodules+=refresh_hg_submodule(name,subrepo_info)
 
   if len(gitmodules):
     wr('M 100644 inline .gitmodules')
@@ -178,7 +192,7 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
   for file in files:
-    if submodule_mappings and file==".hgsubstate":
+    if file==".hgsubstate":
       refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == ".hgtags":

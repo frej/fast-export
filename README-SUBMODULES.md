@@ -2,11 +2,21 @@
 
 ## Introduction
 
-Subrepositories must first be converted in order for the conversion of
-the super repository to know how hg commits map to git commits in the
-sub repositories.  When all subrepositories have been converted, a
-mapping file that maps the mercurial subrepository path to a converted
-git submodule path must be created. The format for this file is:
+hg-fast-export supports migrating mercurial subrepositories in the
+repository being converted into git submodules in the converted repository.
+
+Git submodules must be git repositories while mercurial's subrepositories can
+be git, mercurial or subversion repositories. hg-fast-export will handle any
+git subrepositories automatically, any other kinds must first be converted
+to git repositories. Currently hg-fast-export does not support the conversion
+of subversion subrepositories. The rest of this page covers the conversion of
+mercurial subrepositories which require some manual steps:
+
+The first step for mercurial subrepositories involves converting the
+subrepository into a git repository using hg-fast-export.  When all
+subrepositories have been converted, a mapping file that maps the mercurial
+subrepository path to a converted git submodule path must be created. The
+format for this file is:
 
 "<mercurial subrepo path>"="<git submodule path>"
 "<mercurial subrepo path2>"="<git submodule path2>"
