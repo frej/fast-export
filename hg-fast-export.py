@@ -171,7 +171,8 @@ def refresh_gitmodules(ctx):
   gitmodules=""
   # Create the .gitmodules file and all submodules
   for name,subrepo_info in ctx.substate.items():
-    gitmodules+=refresh_hg_submodule(name,subrepo_info)
+    if name in submodule_mappings:
+      gitmodules+=refresh_hg_submodule(name,subrepo_info)
 
   if len(gitmodules):
     wr('M 100644 inline .gitmodules')
