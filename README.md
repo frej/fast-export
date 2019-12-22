@@ -107,6 +107,11 @@ branch/tag names. In the future -n will become the default, but in
 order to not break existing incremental conversions, the default
 remains with the old behavior.
 
+By default, the `default` mercurial branch is renamed to the `master` 
+branch on git. If your mercurial repo contains both `default` and 
+`master` branches, you'll need to override this behavior. Use
+`-M <newName>` to specify what name to give the `default` branch.
+
 Content filtering
 -----------------
 
