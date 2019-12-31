@@ -149,7 +149,8 @@ def refresh_git_submodule(name,subrepo_info):
     subrepo_info[0])
 
 def refresh_hg_submodule(name,subrepo_info):
-  gitRepoLocation=submodule_mappings[name] + "/.git"
+  location,url = submodule_mappings[name]
+  gitRepoLocation=location + "/.git"
 
   # Populate the cache to map mercurial revision to git revision
   if not name in subrepo_cache:
@@ -165,8 +166,7 @@ def refresh_hg_submodule(name,subrepo_info):
     wr('M 160000 %s %s' % (gitSha,name))
     sys.stderr.write("Adding/updating submodule %s, revision %s->%s\n"
                      % (name,subrepo_hash,gitSha))
-    return '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
-      submodule_mappings[name])
+    return '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,url)
   else:
     sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" %
       (subrepo_hash,name,gitRepoLocation))
@@ -621,12 +621,19 @@ if __name__=='__main__':
   if options.repourl==None: bail(parser,'--repo')
 
   if options.subrepo_map:
-      if not os.path.exists(options.subrepo_map):
-        sys.stderr.write('Subrepo mapping file not found %s\n'
-                         % options.subrepo_map)
-        sys.exit(1)
-      submodule_mappings=load_mapping('subrepo mappings',
-                                      options.subrepo_map,False)
+    if not os.path.exists(options.subrepo_map):
+      sys.stderr.write('Subrepo mapping file not found %s\n'
+                        % options.subrepo_map)
+      sys.exit(1)
+
+    def parse_submodule_mapping(value):
+      l=value.split('|',1)
+      return (l[0],l[1]) if len(l) >= 2 else (value,value)
+
+    plain_mapping=load_mapping('subrepo mappings',options.subrepo_map,False)
+    submodule_mappings={}
+    for key,value in plain_mapping.items():
+      submodule_mappings[key]=parse_submodule_mapping(value)
 
   a={}
   if options.authorfile!=None:
