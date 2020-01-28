@@ -191,8 +191,10 @@ def refresh_gitmodules(ctx):
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
+  is_submodules_refreshed=False
   for file in files:
-    if file==".hgsubstate":
+    if not is_submodules_refreshed and (file=='.hgsub' or file=='.hgsubstate'):
+      is_submodules_refreshed=True
       refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
     if not hgtags and file == ".hgtags":
@@ -336,7 +338,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     if fn_encoding:
       filename=filename.decode(fn_encoding).encode('utf8')
     filename=strip_leading_slash(filename)
-    if filename=='.hgsubstate':
+    if filename=='.hgsub':
       remove_gitmodules(ctx)
     wr('D %s' % filename)
 
