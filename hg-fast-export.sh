@@ -110,7 +110,7 @@ if [ "true" = "$IGNORECASE" ]; then
     IGNORECASEWARN="true"
 fi;
 
-
+HG2GIT_ARGS=()
 while case "$#" in 0) break ;; esac
 do
   case "$1" in
@@ -125,14 +125,10 @@ do
       # pass --force to git-fast-import and hg-fast-export.py
       GFI_OPTS="$GFI_OPTS --force"
       IGNORECASEWARN="";
-      break
       ;;
-    -*)
-      # pass any other options down to hg2git.py
-      break
-      ;;
-    *)
-      break
+    # pass all other args down to hg2git.py
+	*)
+      HG2GIT_ARGS+=("$1")
       ;;
   esac
   shift
@@ -187,7 +183,7 @@ $(
       --mapping "$GIT_DIR/$PFX-$SFX_MAPPING" \
       --heads "$GIT_DIR/$PFX-$SFX_HEADS" \
       --status "$GIT_DIR/$PFX-$SFX_STATE" \
-      "$@" 3>&- || _e1=$?
+      "${HG2GIT_ARGS[@]}" 3>&- || _e1=$?
     echo $_e1 >&3
   } | \
   {
