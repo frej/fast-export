@@ -320,8 +320,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       # later non-merge revision: feed in changed manifest
       # if we have exactly one parent, just take the changes from the
       # manifest without expensively comparing checksums
-      f=repo.status(parents[0],revnode)[:3]
-      added,changed,removed=f[1],f[0],f[2]
+      f=repo.status(parents[0],revnode)
+      added,changed,removed=f.added,f.modified,f.removed
       type='simple delta'
     else: # a merge with two parents
       wr('merge %s' % revnum_to_revref(parents[1], old_marks))
