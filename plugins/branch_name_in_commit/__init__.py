@@ -3,12 +3,21 @@ def build_filter(args):
 
 class Filter:
     def __init__(self, args):
-        if not args in ['start','end']:
-            raise Exception('Cannot have branch name anywhere but start and end')
-        self.pos = args
+        args = {arg: True for arg in args.split(',')}
+        self.start = args.pop('start', False)
+        self.end = args.pop('end', False)
+        self.sameline = args.pop('sameline', False)
+        self.skip_master = args.pop('skipmaster', False)
 
-    def commit_message_filter(self,commit_data):
-        if self.pos == 'start':
-            commit_data['desc'] = commit_data['branch'] + '\n' + commit_data['desc']
-        if self.pos == 'end':
-            commit_data['desc'] = commit_data['desc'] + '\n' + commit_data['branch']
+        if self.sameline and not self.start:
+            raise ValueError("sameline option only allowed if 'start' given")
+        if args:
+            raise ValueError("Unknown args: " + ','.join(args))
+
+    def commit_message_filter(self, commit_data):
+        if not (self.skip_master and commit_data['branch'] == 'master'):
+            if self.start:
+                sep = ': ' if self.sameline else '\n' 
+                commit_data['desc'] = commit_data['branch'] + sep + commit_data['desc']
+            if self.end:
+                commit_data['desc'] = commit_data['desc'] + '\n' + commit_data['branch']
