@@ -196,6 +196,11 @@ hg-fast-export supports multiple branches but only named branches with
 exactly one head each. Otherwise commits to the tip of these heads
 within the branch will get flattened into merge commits.
 
+hg-fast-export will ignore any files or directories tracked by mercurial
+called `.git`, and will print a warning if it encounters one. Git cannot
+track such files or directories. This is not to be confused with submodules,
+which are described in README-SUBMODULES.md.
+
 As each git-fast-import run creates a new pack file, it may be
 required to repack the repository quite often for incremental imports
 (especially when importing a small number of changesets per
