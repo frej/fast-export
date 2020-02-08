@@ -221,7 +221,12 @@ Submitting Patches
 Please use the [issue-tracker](https://github.com/frej/fast-export) at
 github to report bugs and submit patches.
 
-
+Please read
+[https://chris.beams.io/posts/git-commit/](https://chris.beams.io/posts/git-commit/)
+on how to write a good commit message before submitting a pull request
+for review. Although the article recommends at most 50 characters for
+the subject, up to 72 characters are frequently accepted for
+fast-export.
 
 Frequent Problems
 =================
