@@ -218,9 +218,10 @@ saw never get modified.
 Submitting Patches
 ------------------
 
-Please use the issue-tracker at github
-https://github.com/frej/fast-export to report bugs and submit
-patches.
+Please use the [issue-tracker](https://github.com/frej/fast-export) at
+github to report bugs and submit patches.
+
+
 
 Frequent Problems
 =================
