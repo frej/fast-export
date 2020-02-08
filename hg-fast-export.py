@@ -204,6 +204,9 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
       filename=file.decode(encoding).encode('utf8')
     else:
       filename=file
+    if '.git' in filename.split(os.path.sep):
+      sys.stderr.write('Ignoring file %s which cannot be tracked by git\n' % filename)
+      continue
     file_ctx=ctx.filectx(file)
     d=file_ctx.data()
 
