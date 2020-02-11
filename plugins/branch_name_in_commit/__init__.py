@@ -15,9 +15,11 @@ class Filter:
             raise ValueError("Unknown args: " + ','.join(args))
 
     def commit_message_filter(self, commit_data):
-        if not (self.skip_master and commit_data['branch'] == 'master'):
+        if not (self.skip_master and commit_data['branch'] == b'master'):
             if self.start:
-                sep = ': ' if self.sameline else '\n' 
+                sep = b': ' if self.sameline else b'\n'
                 commit_data['desc'] = commit_data['branch'] + sep + commit_data['desc']
             if self.end:
-                commit_data['desc'] = commit_data['desc'] + '\n' + commit_data['branch']
+                commit_data['desc'] = (
+                    commit_data['desc'] + b'\n' + commit_data['branch']
+                )

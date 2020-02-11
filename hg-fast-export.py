@@ -11,9 +11,13 @@ from optparse import OptionParser
 import re
 import sys
 import os
+from binascii import hexlify
 import pluginloader
+PY2 = sys.version_info.major == 2
+if PY2:
+  str = unicode
 
-if sys.platform == "win32":
+if PY2 and sys.platform == "win32":
   # On Windows, sys.stdout is initially opened in text mode, which means that
   # when a LF (\n) character is written to sys.stdout, it will be converted
   # into CRLF (\r\n).  That makes git blow up, so use this platform-specific
@@ -22,7 +26,7 @@ if sys.platform == "win32":
   msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
 # silly regex to catch Signed-off-by lines in log message
-sob_re=re.compile('^Signed-[Oo]ff-[Bb]y: (.+)$')
+sob_re=re.compile(b'^Signed-[Oo]ff-[Bb]y: (.+)$')
 # insert 'checkpoint' command after this many commits or none at all if 0
 cfg_checkpoint_count=0
 # write some progress message every this many file contents written
@@ -35,30 +39,33 @@ submodule_mappings=None
 # author/branch/tag names.
 auto_sanitize = None
 
+stdout_buffer = sys.stdout if PY2 else sys.stdout.buffer
+
 def gitmode(flags):
-  return 'l' in flags and '120000' or 'x' in flags and '100755' or '100644'
+  return b'l' in flags and b'120000' or b'x' in flags and b'100755' or b'100644'
 
-def wr_no_nl(msg=''):
+def wr_no_nl(msg=b''):
+  assert isinstance(msg, bytes)
   if msg:
-    sys.stdout.write(msg)
+    stdout_buffer.write(msg)
 
-def wr(msg=''):
+def wr(msg=b''):
   wr_no_nl(msg)
-  sys.stdout.write('\n')
+  stdout_buffer.write(b'\n')
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
 def checkpoint(count):
   count=count+1
   if cfg_checkpoint_count>0 and count%cfg_checkpoint_count==0:
     sys.stderr.write("Checkpoint after %d commits\n" % count)
-    wr('checkpoint')
+    wr(b'checkpoint')
     wr()
   return count
 
 def revnum_to_revref(rev, old_marks):
   """Convert an hg revnum to a git-fast-import rev reference (an SHA1
   or a mark)"""
-  return old_marks.get(rev) or ':%d' % (rev+1)
+  return old_marks.get(rev) or b':%d' % (rev+1)
 
 def file_mismatch(f1,f2):
   """See if two revisions of a file are not equal."""
@@ -87,7 +94,7 @@ def get_filechanges(repo,revision,parents,mleft):
   l,c,r=[],[],[]
   for p in parents:
     if p<0: continue
-    mright=revsymbol(repo,str(p)).manifest()
+    mright=revsymbol(repo,b"%d" %p).manifest()
     l,c,r=split_dict(mleft,mright,l,c,r)
   l.sort()
   c.sort()
@@ -110,7 +117,7 @@ def get_author(logmessage,committer,authors):
   "Signed-off-by: foo" and thus matching our detection regex. Prevent
   that."""
 
-  loglines=logmessage.split('\n')
+  loglines=logmessage.split(b'\n')
   i=len(loglines)
   # from tail walk to top skipping empty lines
   while i>=0:
@@ -138,23 +145,24 @@ def remove_gitmodules(ctx):
   # be to only remove the submodules of the first parent.
   for parent_ctx in ctx.parents():
     for submodule in parent_ctx.substate.keys():
-      wr('D %s' % submodule)
-  wr('D .gitmodules')
+      wr(b'D %s' % submodule)
+  wr(b'D .gitmodules')
 
 def refresh_git_submodule(name,subrepo_info):
-  wr('M 160000 %s %s' % (subrepo_info[1],name))
-  sys.stderr.write("Adding/updating submodule %s, revision %s\n"
-                   % (name,subrepo_info[1]))
-  return '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
-    subrepo_info[0])
+  wr(b'M 160000 %s %s' % (subrepo_info[1],name))
+  sys.stderr.write(
+    "Adding/updating submodule %s, revision %s\n"
+    % (name.decode('utf8'), subrepo_info[1].decode('utf8'))
+  )
+  return b'[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name, name, subrepo_info[0])
 
 def refresh_hg_submodule(name,subrepo_info):
-  gitRepoLocation=submodule_mappings[name] + "/.git"
+  gitRepoLocation=submodule_mappings[name] + b"/.git"
 
   # Populate the cache to map mercurial revision to git revision
   if not name in subrepo_cache:
-    subrepo_cache[name]=(load_cache(gitRepoLocation+"/hg2git-mapping"),
-                         load_cache(gitRepoLocation+"/hg2git-marks",
+    subrepo_cache[name]=(load_cache(gitRepoLocation+b"/hg2git-mapping"),
+                         load_cache(gitRepoLocation+b"/hg2git-marks",
                                     lambda s: int(s)-1))
 
   (mapping_cache,marks_cache)=subrepo_cache[name]
@@ -162,30 +170,38 @@ def refresh_hg_submodule(name,subrepo_info):
   if subrepo_hash in mapping_cache:
     revnum=mapping_cache[subrepo_hash]
     gitSha=marks_cache[int(revnum)]
-    wr('M 160000 %s %s' % (gitSha,name))
-    sys.stderr.write("Adding/updating submodule %s, revision %s->%s\n"
-                     % (name,subrepo_hash,gitSha))
-    return '[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
+    wr(b'M 160000 %s %s' % (gitSha,name))
+    sys.stderr.write(
+      "Adding/updating submodule %s, revision %s->%s\n"
+      % (name.decode('utf8'), subrepo_hash.decode('utf8'), gitSha.decode('utf8'))
+    )
+    return b'[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
       submodule_mappings[name])
   else:
-    sys.stderr.write("Warning: Could not find hg revision %s for %s in git %s\n" %
-      (subrepo_hash,name,gitRepoLocation))
-    return ''
+    sys.stderr.write(
+      "Warning: Could not find hg revision %s for %s in git %s\n"
+      % (
+        subrepo_hash.decode('utf8'),
+        name.decode('utf8'),
+        gitRepoLocation.decode('utf8'),
+      )
+    )
+    return b''
 
 def refresh_gitmodules(ctx):
   """Updates list of ctx submodules according to .hgsubstate file"""
   remove_gitmodules(ctx)
-  gitmodules=""
+  gitmodules=b""
   # Create the .gitmodules file and all submodules
   for name,subrepo_info in ctx.substate.items():
-    if subrepo_info[2]=='git':
+    if subrepo_info[2]==b'git':
       gitmodules+=refresh_git_submodule(name,subrepo_info)
     elif submodule_mappings and name in submodule_mappings:
       gitmodules+=refresh_hg_submodule(name,subrepo_info)
 
   if len(gitmodules):
-    wr('M 100644 inline .gitmodules')
-    wr('data %d' % (len(gitmodules)+1))
+    wr(b'M 100644 inline .gitmodules')
+    wr(b'data %d' % (len(gitmodules)+1))
     wr(gitmodules)
 
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
@@ -193,19 +209,21 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   max=len(files)
   is_submodules_refreshed=False
   for file in files:
-    if not is_submodules_refreshed and (file=='.hgsub' or file=='.hgsubstate'):
+    if not is_submodules_refreshed and (file==b'.hgsub' or file==b'.hgsubstate'):
       is_submodules_refreshed=True
       refresh_gitmodules(ctx)
     # Skip .hgtags files. They only get us in trouble.
-    if not hgtags and file == ".hgtags":
-      sys.stderr.write('Skip %s\n' % (file))
+    if not hgtags and file == b".hgtags":
+      sys.stderr.write('Skip %s\n' % file.decode('utf8'))
       continue
     if encoding:
       filename=file.decode(encoding).encode('utf8')
     else:
       filename=file
-    if '.git' in filename.split(os.path.sep):
-      sys.stderr.write('Ignoring file %s which cannot be tracked by git\n' % filename)
+    if b'.git' in filename.split(os.path.sep.encode()):
+      sys.stderr.write(
+          'Ignoring file %s which cannot be tracked by git\n' % filename.decode('utf8')
+      )
       continue
     file_ctx=ctx.filectx(file)
     d=file_ctx.data()
@@ -218,9 +236,9 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
       filename=file_data['filename']
       file_ctx=file_data['file_ctx']
 
-    wr('M %s inline %s' % (gitmode(manifest.flags(file)),
+    wr(b'M %s inline %s' % (gitmode(manifest.flags(file)),
                            strip_leading_slash(filename)))
-    wr('data %d' % len(d)) # had some trouble with size()
+    wr(b'data %d' % len(d)) # had some trouble with size()
     wr(d)
     count+=1
     if count%cfg_export_boundary==0:
@@ -246,25 +264,28 @@ def sanitize_name(name,what="branch", mapping={}):
 
   def dot(name):
     if not name: return name
-    if name[0] == '.': return '_'+name[1:]
+    if name[0:1] == b'.': return b'_'+name[1:]
     return name
 
   if not auto_sanitize:
     return mapping.get(name,name)
   n=mapping.get(name,name)
-  p=re.compile('([[ ~^:?\\\\*]|\.\.)')
-  n=p.sub('_', n)
-  if n[-1] in ('/', '.'): n=n[:-1]+'_'
-  n='/'.join(map(dot,n.split('/')))
-  p=re.compile('_+')
-  n=p.sub('_', n)
+  p=re.compile(b'([[ ~^:?\\\\*]|\.\.)')
+  n=p.sub(b'_', n)
+  if n[-1:] in (b'/', b'.'): n=n[:-1]+b'_'
+  n=b'/'.join([dot(s) for s in n.split(b'/')])
+  p=re.compile(b'_+')
+  n=p.sub(b'_', n)
 
   if n!=name:
-    sys.stderr.write('Warning: sanitized %s [%s] to [%s]\n' % (what,name,n))
+    sys.stderr.write(
+        'Warning: sanitized %s [%s] to [%s]\n'
+        % (what, name.decode('utf8'), n.decode('utf8'))
+    )
   return n
 
 def strip_leading_slash(filename):
-  if filename[0] == '/':
+  if filename[0:1] == b'/':
     return filename[1:]
   return filename
 
@@ -272,7 +293,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
                   branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',
                   plugins={}):
   def get_branchname(name):
-    if brmap.has_key(name):
+    if name in brmap:
       return brmap[name]
     n=sanitize_name(name, "branch", branchesmap)
     brmap[name]=n
@@ -297,18 +318,18 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     desc = commit_data['desc']
 
   if len(parents)==0 and revision != 0:
-    wr('reset refs/heads/%s' % branch)
+    wr(b'reset refs/heads/%s' % branch)
 
-  wr('commit refs/heads/%s' % branch)
-  wr('mark :%d' % (revision+1))
+  wr(b'commit refs/heads/%s' % branch)
+  wr(b'mark :%d' % (revision+1))
   if sob:
-    wr('author %s %d %s' % (author,time,timezone))
-  wr('committer %s %d %s' % (user,time,timezone))
-  wr('data %d' % (len(desc)+1)) # wtf?
+    wr(b'author %s %d %s' % (author,time,timezone))
+  wr(b'committer %s %d %s' % (user,time,timezone))
+  wr(b'data %d' % (len(desc)+1)) # wtf?
   wr(desc)
   wr()
 
-  ctx=revsymbol(repo,str(revision))
+  ctx=revsymbol(repo, b"%d" % revision)
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
@@ -318,7 +339,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     added.sort()
     type='full'
   else:
-    wr('from %s' % revnum_to_revref(parents[0], old_marks))
+    wr(b'from %s' % revnum_to_revref(parents[0], old_marks))
     if len(parents) == 1:
       # later non-merge revision: feed in changed manifest
       # if we have exactly one parent, just take the changes from the
@@ -327,7 +348,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       added,changed,removed=f.added,f.modified,f.removed
       type='simple delta'
     else: # a merge with two parents
-      wr('merge %s' % revnum_to_revref(parents[1], old_marks))
+      wr(b'merge %s' % revnum_to_revref(parents[1], old_marks))
       # later merge revision: feed in changed manifest
       # for many files comparing checksums is expensive so only do it for
       # merges where we really need it due to hg's revlog logic
@@ -335,15 +356,15 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       type='thorough delta'
 
   sys.stderr.write('%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n' %
-      (branch,type,revision+1,max,len(added),len(changed),len(removed)))
+      (branch.decode('utf8'),type,revision+1,max,len(added),len(changed),len(removed)))
 
   for filename in removed:
     if fn_encoding:
       filename=filename.decode(fn_encoding).encode('utf8')
     filename=strip_leading_slash(filename)
-    if filename=='.hgsub':
+    if filename==b'.hgsub':
       remove_gitmodules(ctx)
-    wr('D %s' % filename)
+    wr(b'D %s' % filename)
 
   export_file_contents(ctx,man,added,hgtags,fn_encoding,plugins)
   export_file_contents(ctx,man,changed,hgtags,fn_encoding,plugins)
@@ -358,21 +379,17 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
 
-  wr('commit refs/notes/hg')
-  wr('committer %s %d %s' % (user,time,timezone))
-  wr('data 0')
+  wr(b'commit refs/notes/hg')
+  wr(b'committer %s %d %s' % (user,time,timezone))
+  wr(b'data 0')
   if is_first:
-    wr('from refs/notes/hg^0')
-  wr('N inline :%d' % (revision+1))
-  hg_hash=revsymbol(repo,str(revision)).hex()
-  wr('data %d' % (len(hg_hash)))
+    wr(b'from refs/notes/hg^0')
+  wr(b'N inline :%d' % (revision+1))
+  hg_hash=revsymbol(repo,b"%d" % revision).hex()
+  wr(b'data %d' % (len(hg_hash)))
   wr_no_nl(hg_hash)
   wr()
   return checkpoint(count)
-
-  wr('data %d' % (len(desc)+1)) # wtf?
-  wr(desc)
-  wr()
 
 def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
   l=repo.tagslist()
@@ -380,30 +397,36 @@ def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
     # Remap the branch name
     tag=sanitize_name(tag,"tag",tagsmap)
     # ignore latest revision
-    if tag=='tip': continue
+    if tag==b'tip': continue
     # ignore tags to nodes that are missing (ie, 'in the future')
-    if node.encode('hex_codec') not in mapping_cache:
-      sys.stderr.write('Tag %s refers to unseen node %s\n' % (tag, node.encode('hex_codec')))
+    if hexlify(node) not in mapping_cache:
+      sys.stderr.write(
+          'Tag %s refers to unseen node %s\n'
+          % (tag.decode('utf8'), hexlify(node).decode('utf8'))
+      )
       continue
 
-    rev=int(mapping_cache[node.encode('hex_codec')])
+    rev=int(mapping_cache[hexlify(node)])
 
     ref=revnum_to_revref(rev, old_marks)
     if ref==None:
       sys.stderr.write('Failed to find reference for creating tag'
           ' %s at r%d\n' % (tag,rev))
       continue
-    sys.stderr.write('Exporting tag [%s] at [hg r%d] [git %s]\n' % (tag,rev,ref))
-    wr('reset refs/tags/%s' % tag)
-    wr('from %s' % ref)
+    sys.stderr.write(
+        'Exporting tag [%s] at [hg r%d] [git %s]\n'
+        % (tag.decode('utf8'), rev, ref.decode('utf8'))
+    )
+    wr(b'reset refs/tags/%s' % tag)
+    wr(b'from %s' % ref)
     wr()
     count=checkpoint(count)
   return count
 
 def load_mapping(name, filename, mapping_is_raw):
-  raw_regexp=re.compile('^([^=]+)[ ]*=[ ]*(.+)$')
-  string_regexp='"(((\\.)|(\\")|[^"])*)"'
-  quoted_regexp=re.compile('^'+string_regexp+'[ ]*=[ ]*'+string_regexp+'$')
+  raw_regexp=re.compile(b'^([^=]+)[ ]*=[ ]*(.+)$')
+  string_regexp=b'"(((\\.)|(\\")|[^"])*)"'
+  quoted_regexp=re.compile(b'^'+string_regexp+b'[ ]*=[ ]*'+string_regexp+b'$')
 
   def parse_raw_line(line):
     m=raw_regexp.match(line)
@@ -415,22 +438,22 @@ def load_mapping(name, filename, mapping_is_raw):
     m=quoted_regexp.match(line)
     if m==None:
       return None
-    return (m.group(1).decode('string_escape'),
-            m.group(5).decode('string_escape'))
+    return (m.group(1).decode('unicode_escape').encode('utf8'),
+            m.group(5).decode('unicode_escape').encode('utf8'))
 
   cache={}
   if not os.path.exists(filename):
     sys.stderr.write('Could not open mapping file [%s]\n' % (filename))
     return cache
-  f=open(filename,'r')
+  f=open(filename,'rb')
   l=0
   a=0
   for line in f.readlines():
     l+=1
     line=line.strip()
-    if l==1 and line[0]=='#' and line=='# quoted-escaped-strings':
+    if l==1 and line[0:1]==b'#' and line==b'# quoted-escaped-strings':
       continue
-    elif line=='' or line[0]=='#':
+    elif line==b'' or line[0:1]==b'#':
       continue
     m=parse_raw_line(line) if mapping_is_raw else parse_quoted_line(line)
     if m==None:
@@ -454,7 +477,7 @@ def branchtip(repo, heads):
 
 def verify_heads(ui,repo,cache,force,branchesmap):
   branches={}
-  for bn, heads in repo.branchmap().iteritems():
+  for bn, heads in repo.branchmap().items():
     branches[bn] = branchtip(repo, heads)
   l=[(-repo.changelog.rev(n), n, t) for t, n in branches.items()]
   l.sort()
@@ -466,13 +489,16 @@ def verify_heads(ui,repo,cache,force,branchesmap):
     sha1=get_git_sha1(sanitized_name)
     c=cache.get(sanitized_name)
     if sha1!=c:
-      sys.stderr.write('Error: Branch [%s] modified outside hg-fast-export:'
-        '\n%s (repo) != %s (cache)\n' % (b,sha1,c))
+      sys.stderr.write(
+          'Error: Branch [%s] modified outside hg-fast-export:'
+          '\n%s (repo) != %s (cache)\n'
+          % (b.decode('utf8'), sha1.decode('utf8'), c.decode('utf8'))
+      )
       if not force: return False
 
   # verify that branch has exactly one head
   t={}
-  for h in repo.filtered('visible').heads():
+  for h in repo.filtered(b'visible').heads():
     (_,_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
     if t.get(branch,False):
       sys.stderr.write('Error: repository has at least one unnamed head: hg r%s\n' %
@@ -519,15 +545,15 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
     max=tip
 
   for rev in range(0,max):
-  	(revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
-  	if repo[revnode].hidden():
-  		continue
-  	mapping_cache[revnode.encode('hex_codec')] = str(rev)
+    (revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
+    if repo[revnode].hidden():
+      continue
+    mapping_cache[hexlify(revnode)] = b"%d" % rev
 
   if submodule_mappings:
     # Make sure that all submodules are registered in the submodule-mappings file
     for rev in range(0,max):
-      ctx=revsymbol(repo,str(rev))
+      ctx=revsymbol(repo,b"%d" % rev)
       if ctx.hidden():
         continue
       if ctx.substate:

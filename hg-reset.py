@@ -7,6 +7,7 @@ from mercurial import node
 from hg2git import setup_repo,load_cache,get_changeset,get_git_sha1
 from optparse import OptionParser
 import sys
+from binascii import hexlify
 
 def heads(ui,repo,start=None,stop=None,max=None):
   # this is copied from mercurial/revlog.py and differs only in
@@ -24,7 +25,7 @@ def heads(ui,repo,start=None,stop=None,max=None):
   heads = {startrev: 1}
 
   parentrevs = repo.changelog.parentrevs
-  for r in xrange(startrev + 1, max):
+  for r in range(startrev + 1, max):
     for p in parentrevs(r):
       if p in reachable:
         if r not in stoprevs:
@@ -33,7 +34,7 @@ def heads(ui,repo,start=None,stop=None,max=None):
       if p in heads and p not in stoprevs:
         del heads[p]
 
-  return [(repo.changelog.node(r),str(r)) for r in heads]
+  return [(repo.changelog.node(r), b"%d" % r) for r in heads]
 
 def get_branches(ui,repo,heads_cache,marks_cache,mapping_cache,max):
   h=heads(ui,repo,max=max)
@@ -44,11 +45,11 @@ def get_branches(ui,repo,heads_cache,marks_cache,mapping_cache,max):
     _,_,user,(_,_),_,desc,branch,_=get_changeset(ui,repo,rev)
     del stale[branch]
     git_sha1=get_git_sha1(branch)
-    cache_sha1=marks_cache.get(str(int(rev)+1))
+    cache_sha1=marks_cache.get(b"%d" % (int(rev)+1))
     if git_sha1!=None and git_sha1==cache_sha1:
-      unchanged.append([branch,cache_sha1,rev,desc.split('\n')[0],user])
+      unchanged.append([branch,cache_sha1,rev,desc.split(b'\n')[0],user])
     else:
-      changed.append([branch,cache_sha1,rev,desc.split('\n')[0],user])
+      changed.append([branch,cache_sha1,rev,desc.split(b'\n')[0],user])
   changed.sort()
   unchanged.sort()
   return stale,changed,unchanged
@@ -57,20 +58,20 @@ def get_tags(ui,repo,marks_cache,mapping_cache,max):
   l=repo.tagslist()
   good,bad=[],[]
   for tag,node in l:
-    if tag=='tip': continue
-    rev=int(mapping_cache[node.encode('hex_codec')])
-    cache_sha1=marks_cache.get(str(int(rev)+1))
+    if tag==b'tip': continue
+    rev=int(mapping_cache[hexlify(node)])
+    cache_sha1=marks_cache.get(b"%d" % (int(rev)+1))
     _,_,user,(_,_),_,desc,branch,_=get_changeset(ui,repo,rev)
     if int(rev)>int(max):
-      bad.append([tag,branch,cache_sha1,rev,desc.split('\n')[0],user])
+      bad.append([tag,branch,cache_sha1,rev,desc.split(b'\n')[0],user])
     else:
-      good.append([tag,branch,cache_sha1,rev,desc.split('\n')[0],user])
+      good.append([tag,branch,cache_sha1,rev,desc.split(b'\n')[0],user])
   good.sort()
   bad.sort()
   return good,bad
 
 def mangle_mark(mark):
-  return str(int(mark)-1)
+  return b"%d" % (int(mark)-1)
 
 if __name__=='__main__':
   def bail(parser,opt):
@@ -107,7 +108,7 @@ if __name__=='__main__':
   state_cache=load_cache(options.statusfile)
   mapping_cache = load_cache(options.mappingfile)
 
-  l=int(state_cache.get('tip',options.revision))
+  l=int(state_cache.get(b'tip',options.revision))
   if options.revision+1>l:
     sys.stderr.write('Revision is beyond last revision imported: %d>%d\n' % (options.revision,l))
     sys.exit(1)
@@ -117,19 +118,39 @@ if __name__=='__main__':
   stale,changed,unchanged=get_branches(ui,repo,heads_cache,marks_cache,mapping_cache,options.revision+1)
   good,bad=get_tags(ui,repo,marks_cache,mapping_cache,options.revision+1)
 
-  print "Possibly stale branches:"
-  map(lambda b: sys.stdout.write('\t%s\n' % b),stale.keys())
+  print("Possibly stale branches:")
+  for b in stale:
+    sys.stdout.write('\t%s\n' % b.decode('utf8'))
 
-  print "Possibly stale tags:"
-  map(lambda b: sys.stdout.write('\t%s on %s (r%s)\n' % (b[0],b[1],b[3])),bad)
+  print("Possibly stale tags:")
+  for b in bad:
+    sys.stdout.write(
+      '\t%s on %s (r%s)\n'
+      % (b[0].decode('utf8'), b[1].decode('utf8'), b[3].decode('utf8'))
+    )
 
-  print "Unchanged branches:"
-  map(lambda b: sys.stdout.write('\t%s (r%s)\n' % (b[0],b[2])),unchanged)
+  print("Unchanged branches:")
+  for b in unchanged:
+    sys.stdout.write('\t%s (r%s)\n' % (b[0].decode('utf8'),b[2].decode('utf8')))
 
-  print "Unchanged tags:"
-  map(lambda b: sys.stdout.write('\t%s on %s (r%s)\n' % (b[0],b[1],b[3])),good)
+  print("Unchanged tags:")
+  for b in good:
+    sys.stdout.write(
+      '\t%s on %s (r%s)\n'
+      % (b[0].decode('utf8'), b[1].decode('utf8'), b[3].decode('utf8'))
+    )
 
-  print "Reset branches in '%s' to:" % options.headsfile
-  map(lambda b: sys.stdout.write('\t:%s %s\n\t\t(r%s: %s: %s)\n' % (b[0],b[1],b[2],b[4],b[3])),changed)
+  print("Reset branches in '%s' to:" % options.headsfile)
+  for b in changed:
+    sys.stdout.write(
+      '\t:%s %s\n\t\t(r%s: %s: %s)\n'
+      % (
+        b[0].decode('utf8'),
+        b[1].decode('utf8'),
+        b[2].decode('utf8'),
+        b[4].decode('utf8'),
+        b[3].decode('utf8'),
+      )
+    )
 
-  print "Reset ':tip' in '%s' to '%d'" % (options.statusfile,options.revision)
+  print("Reset ':tip' in '%s' to '%d'" % (options.statusfile,options.revision))

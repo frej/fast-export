@@ -28,25 +28,20 @@ SFX_STATE="state"
 GFI_OPTS=""
 
 if [ -z "${PYTHON}" ]; then
-    # $PYTHON is not set, so we try to find a working python 2.7 to
-    # use. PEP 394 tells us to use 'python2', otherwise try plain
-    # 'python'.
-    if command -v python2 > /dev/null; then
-	PYTHON="python2"
-    elif command -v python > /dev/null; then
-	PYTHON="python"
-    else
-        echo "Could not find any python interpreter, please use the 'PYTHON'" \
-	     "environment variable to specify the interpreter to use."
-        exit 1
-    fi
+    # $PYTHON is not set, so we try to find a working python with mercurial:
+    for python_cmd in python2 python python3; do
+        if command -v $python_cmd > /dev/null; then
+            $python_cmd -c 'import mercurial' 2> /dev/null
+            if [ $? -eq 0 ]; then
+                PYTHON=$python_cmd
+                break
+            fi
+        fi
+    done
 fi
-
-# Check that the python specified by the user or autodetected above is
-# >= 2.7 and < 3.
-if ! ${PYTHON} -c 'import sys; v=sys.version_info; exit(0 if v.major == 2 and v.minor >= 7 else 1)' > /dev/null 2>&1 ; then
-    echo "${PYTHON} is not a working python 2.7 interpreter, please use the" \
-	 "'PYTHON' environment variable to specify the interpreter to use."
+if [ -z "${PYTHON}" ]; then
+    echo "Could not find a python interpreter with the mercurial module available. " \
+        "Please use the 'PYTHON' environment variable to specify the interpreter to use."
     exit 1
 fi
 

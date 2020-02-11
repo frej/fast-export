@@ -11,7 +11,24 @@ SFX_MAPPING="mapping"
 SFX_HEADS="heads"
 SFX_STATE="state"
 QUIET=""
-PYTHON=${PYTHON:-python}
+
+if [ -z "${PYTHON}" ]; then
+    # $PYTHON is not set, so we try to find a working python with mercurial:
+    for python_cmd in python2 python python3; do
+        if command -v $python_cmd > /dev/null; then
+            $python_cmd -c 'import mercurial' 2> /dev/null
+            if [ $? -eq 0 ]; then
+                PYTHON=$python_cmd
+                break
+            fi
+        fi
+    done
+fi
+if [ -z "${PYTHON}" ]; then
+    echo "Could not find a python interpreter with the mercurial module available. " \
+        "Please use the 'PYTHON'environment variable to specify the interpreter to use."
+    exit 1
+fi
 
 USAGE="[-r <repo>] -R <rev>"
 LONG_USAGE="Print SHA1s of latest changes per branch up to <rev> useful
