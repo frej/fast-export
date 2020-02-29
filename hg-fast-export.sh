@@ -31,7 +31,7 @@ if [ -z "${PYTHON}" ]; then
     # $PYTHON is not set, so we try to find a working python with mercurial:
     for python_cmd in python2 python python3; do
         if command -v $python_cmd > /dev/null; then
-            $python_cmd -c 'import mercurial' 2> /dev/null
+            $python_cmd -c 'from mercurial.scmutil import revsymbol' 2> /dev/null
             if [ $? -eq 0 ]; then
                 PYTHON=$python_cmd
                 break
@@ -40,7 +40,7 @@ if [ -z "${PYTHON}" ]; then
     done
 fi
 if [ -z "${PYTHON}" ]; then
-    echo "Could not find a python interpreter with the mercurial module available. " \
+    echo "Could not find a python interpreter with the mercurial module >= 4.6 available. " \
         "Please use the 'PYTHON' environment variable to specify the interpreter to use."
     exit 1
 fi
