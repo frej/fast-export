@@ -493,7 +493,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
     (_,_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
     if t.get(branch,False):
       stderr_buffer.write(
-        b'Error: repository has at least one unnamed head: hg r%s\n'
+        b'Error: repository has at least one unnamed head: hg r%d\n'
         % repo.changelog.rev(h)
       )
       if not force: return False
