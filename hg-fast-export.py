@@ -483,7 +483,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
     if sha1!=c:
       stderr_buffer.write(
         b'Error: Branch [%s] modified outside hg-fast-export:'
-        b'\n%s (repo) != %s (cache)\n' % (b, sha1, c)
+        b'\n%s (repo) != %s (cache)\n' % (b, b'<None>' if sha1 is None else sha1, c)
       )
       if not force: return False
 
