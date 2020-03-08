@@ -216,7 +216,7 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
       filename=file.decode(encoding).encode('utf8')
     else:
       filename=file
-    if b'.git' in filename.split(os.path.sep.encode()):
+    if b'.git' in filename.split(b'/'): # Even on Windows, the path separator is / here.
       stderr_buffer.write(
         b'Ignoring file %s which cannot be tracked by git\n' % filename
       )
