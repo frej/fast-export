@@ -281,4 +281,4 @@ Frequent Problems
   git it looks like you have deleted all files, when in fact they have
   never been checked out. Just do a checkout of the branch you want.
 
-[hg-export-tool] https://github.com/chrisjbillington/hg-export-tool
+[hg-export-tool]: https://github.com/chrisjbillington/hg-export-tool
