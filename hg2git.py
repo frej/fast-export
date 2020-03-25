@@ -30,7 +30,7 @@ user_clean_re=re.compile(b'^["]([^"]+)["]$')
 
 def set_default_branch(name):
   global cfg_master
-  cfg_master = name
+  cfg_master = name.encode('utf8') if not isinstance(name, bytes) else name
 
 def set_origin_name(name):
   global origin_name
