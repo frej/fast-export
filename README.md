@@ -80,10 +80,10 @@ author information than git, an author mapping file can be given to
 hg-fast-export to fix up malformed author strings. The file is
 specified using the -A option. The file should contain lines of the
 form `"<key>"="<value>"`. Inside the key and value strings, all escape
-sequences understood by the python `string_escape` encoding are
-supported. (Versions of fast-export prior to v171002 had a different
-syntax, the old syntax can be enabled by the flag
-`--mappings-are-raw`.)
+sequences understood by the python `unicode_escape` encoding are
+supported; strings are otherwise assumed to be UTF8-encoded.
+(Versions of fast-export prior to v171002 had a different syntax, the
+old syntax can be enabled by the flag `--mappings-are-raw`.)
 
 The example authors.map below will translate `User
 <garbage<tab><user@example.com>` to `User <user@example.com>`.
