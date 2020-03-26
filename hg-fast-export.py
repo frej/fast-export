@@ -426,12 +426,20 @@ def load_mapping(name, filename, mapping_is_raw):
       return None
     return (m.group(1).strip(), m.group(2).strip())
 
+  def process_unicode_escape_sequences(s):
+    # Replace unicode escape sequences in the otherwise UTF8-encoded bytestring s with
+    # the UTF8-encoded characters they represent. We need to do an additional
+    # .decode('utf8').encode('unicode-escape') to convert any non-ascii characters into
+    # their escape sequences so that the subsequent .decode('unicode-escape') succeeds:
+    return s.decode('utf8').encode('unicode-escape').decode('unicode-escape').encode('utf8')
+
   def parse_quoted_line(line):
     m=quoted_regexp.match(line)
     if m==None:
-      return None
-    return (m.group(1).decode('unicode_escape').encode('utf8'),
-            m.group(5).decode('unicode_escape').encode('utf8'))
+      return 
+    
+    return (process_unicode_escape_sequences(m.group(1)),
+            process_unicode_escape_sequences(m.group(5)))
 
   cache={}
   if not os.path.exists(filename):
