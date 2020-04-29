@@ -525,14 +525,14 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   	mapping_cache[revnode.encode('hex_codec')] = str(rev)
 
   if submodule_mappings:
-    # Make sure that all submodules are registered in the submodule-mappings file
+    # Make sure that all mercurial submodules are registered in the submodule-mappings file
     for rev in range(0,max):
       ctx=revsymbol(repo,str(rev))
       if ctx.hidden():
         continue
       if ctx.substate:
         for key in ctx.substate:
-          if key not in submodule_mappings:
+          if ctx.substate[key][2]=='hg' and key not in submodule_mappings:
             sys.stderr.write("Error: %s not found in submodule-mappings\n" % (key))
             return 1
 
