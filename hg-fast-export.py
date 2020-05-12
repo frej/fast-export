@@ -139,6 +139,25 @@ def get_author(logmessage,committer,authors):
       return r
   return committer
 
+def git_remote(path):
+    pUrl = r'url\s+=\s+(.*)'
+    configpath = path + b"/.git/config"
+    if os.path.exists(configpath):
+        with open(configpath, 'r') as f:
+            line = f.readline().strip()
+            while line:
+                if line.startswith('[remote'):
+                    line = f.readline().strip()
+                    while not line.startswith('['):
+                        match = re.match(pUrl, line)
+                        if match:
+                            return match.group(1)
+                        line = f.readline().strip()
+                    continue
+                line = f.readline().strip()
+    else:
+        return None
+
 def remove_gitmodules(ctx):
   """Removes all submodules of ctx parents"""
   # Removing all submoduies coming from all parents is safe, as the submodules
@@ -157,7 +176,7 @@ def refresh_git_submodule(name,subrepo_info):
   return b'[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name, name, subrepo_info[0])
 
 def refresh_hg_submodule(name,subrepo_info):
-  gitRepoLocation=submodule_mappings[name] + b"/.git"
+  gitRepoLocation=submodule_mappings[name]['path'] + b"/.git"
 
   # Populate the cache to map mercurial revision to git revision
   if not name in subrepo_cache:
@@ -175,8 +194,9 @@ def refresh_hg_submodule(name,subrepo_info):
       b"Adding/updating submodule %s, revision %s->%s\n"
       % (name, subrepo_hash, gitSha)
     )
+    module = submodule_mappings[name]
     return b'[submodule "%s"]\n\tpath = %s\n\turl = %s\n' % (name,name,
-      submodule_mappings[name])
+      module['url'] if module['url'] else module['path'])
   else:
     stderr_buffer.write(
       b"Warning: Could not find hg revision %s for %s in git %s\n"
@@ -460,7 +480,11 @@ def load_mapping(name, filename, mapping_is_raw):
       sys.stderr.write('Invalid file format in [%s], line %d\n' % (filename,l))
       continue
     # put key:value in cache, key without ^:
-    cache[m[0]]=m[1]
+
+    cache[m[0]]={
+      "path": m[1],
+      "url" : git_remote(m[1])
+    }
     a+=1
   f.close()
   sys.stderr.write('Loaded %d %s\n' % (a, name))
