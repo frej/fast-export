@@ -74,11 +74,13 @@ like:
           path = subrepo/subrepo2
           url = ../submodule2
 
-An additional enhancement has been added to hg-fast-export that will recognize repositories
-which are connected to a remote repository.
+For submodules which will be stored on remote repositories, the conversion has been
+enhanced to point at the remote. If converting submodulse from mercurial, these must
+have remote origin set.
 
-This allows the .gitmodules file to have references to the remote rather than your local
-copy of the submodule. The .gitmodules file in this case would look like the following:
+During conversion the submodule remote is recognized, allowing the .gitmodules file to have 
+references to the remote rather than your local copy of the submodule. The .gitmodules file 
+in this case would look like the following:
 
     [submodule "subrepo/subrepo1"]
           path = subrepo/subrepo1
