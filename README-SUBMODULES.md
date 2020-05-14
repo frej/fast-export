@@ -73,3 +73,16 @@ like:
     [submodule "subrepo/subrepo2"]
           path = subrepo/subrepo2
           url = ../submodule2
+
+An additional enhancement has been added to hg-fast-export that will recognize repositories
+which are connected to a remote repository.
+
+This allows the .gitmodules file to have references to the remote rather than your local
+copy of the submodule. The .gitmodules file in this case would look like the following:
+
+    [submodule "subrepo/subrepo1"]
+          path = subrepo/subrepo1
+          url = git@github.com:user/submodule1.git
+    [submodule "subrepo/subrepo2"]
+          path = subrepo/subrepo2
+          url = git@github.com:user/submodule2.git
