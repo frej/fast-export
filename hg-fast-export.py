@@ -391,7 +391,8 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
 def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap,tag_encoding):
   l=repo.tagslist()
   for tag,node in l:
-    tag=tag.decode(tag_encoding).encode('utf8')
+    if tag_encoding:
+      tag=tag.decode(tag_encoding).encode('utf8')
     # Remap the branch name
     tag=sanitize_name(tag,"tag",tagsmap)
     # ignore latest revision
@@ -485,7 +486,8 @@ def verify_heads(ui,repo,cache,force,branchesmap,branch_encoding):
 
   # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
-    b=b.decode(branch_encoding).encode('utf8')
+    if branch_encoding:
+      b=b.decode(branch_encoding).encode('utf8')
     b=get_branch(b)
     sanitized_name=sanitize_name(b,"branch",branchesmap)
     sha1=get_git_sha1(sanitized_name)
