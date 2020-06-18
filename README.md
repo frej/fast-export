@@ -75,6 +75,10 @@ In some locales Mercurial uses different encodings for commit messages
 and file names. In that case, you can use `--fe <encoding>` command line
 option which overrides the -e option for file names.
 
+Also Mercurial uses different encodings for branches and tags encoding.
+In that case, you can use `--be <encoding>` or `--te <encoding>` command 
+line options which overrides the -e option for default.
+
 As mercurial appears to be much less picky about the syntax of the
 author information than git, an author mapping file can be given to
 hg-fast-export to fix up malformed author strings. The file is
