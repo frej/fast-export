@@ -91,8 +91,8 @@ def get_changeset(ui,repo,revision,authors={},encoding=''):
   except hgerror.RepoLookupError:
     node=revision # We got a raw hash
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
-  user=change_encoding(user,encoding)
-  desc=change_encoding(desc,encoding)
+  user=force_utf8(user,encoding)
+  desc=force_utf8(desc,encoding)
   tz=b"%+03d%02d" % (-timezone // 3600, ((-timezone % 3600) // 60))
   branch=get_branch(extra.get(b'branch', b'master'))
   return (node,manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
@@ -138,7 +138,7 @@ def get_git_sha1(name,type='heads'):
   except subprocess.CalledProcessError:
     return None
 
-def change_encoding(name,encoding)
+def force_utf8(name,encoding)
   if encoding:
     return name.decode(encoding).encode('utf8')
   return name

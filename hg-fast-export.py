@@ -5,7 +5,7 @@
 
 from mercurial import node
 from mercurial.scmutil import revsymbol
-from hg2git import setup_repo,fixup_user,get_branch,get_changeset,change_encoding
+from hg2git import setup_repo,fixup_user,get_branch,get_changeset,force_utf8
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
 import re
@@ -212,7 +212,7 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
     if not hgtags and file == b".hgtags":
       stderr_buffer.write(b'Skip %s\n' % file)
       continue
-    filename=change_encoding(file,encoding)
+    filename=force_utf8(file,encoding)
     if b'.git' in filename.split(b'/'): # Even on Windows, the path separator is / here.
       stderr_buffer.write(
         b'Ignoring file %s which cannot be tracked by git\n' % filename
@@ -353,7 +353,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   )
 
   for filename in removed:
-    filename=change_encoding(filename,fn_encoding)
+    filename=force_utf8(filename,fn_encoding)
     filename=strip_leading_slash(filename)
     if filename==b'.hgsub':
       remove_gitmodules(ctx)
@@ -387,7 +387,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
 def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap,tag_encoding):
   l=repo.tagslist()
   for tag,node in l:
-    tag=change_encoding(tag,tag_encoding)
+    tag=force_utf8(tag,tag_encoding)
     # Remap the branch name
     tag=sanitize_name(tag,"tag",tagsmap)
     # ignore latest revision
