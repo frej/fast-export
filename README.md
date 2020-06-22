@@ -73,7 +73,9 @@ can be used to force fast-export to convert incoming meta data from
 
 In some locales Mercurial uses different encodings for commit messages
 and file names. In that case, you can use `--fe <encoding>` command line
-option which overrides the -e option for file names.
+option which overrides the -e option for file names. Likewise the options 
+`--be <encoding>` and `--te <encoding>` override the encoding used for 
+branch names and tags respectively.
 
 As mercurial appears to be much less picky about the syntax of the
 author information than git, an author mapping file can be given to

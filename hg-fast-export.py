@@ -384,9 +384,10 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
   wr()
   return checkpoint(count)
 
-def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap):
+def export_tags(ui,repo,old_marks,mapping_cache,count,authors,tagsmap,tag_encoding):
   l=repo.tagslist()
   for tag,node in l:
+    tag=force_utf8(tag,tag_encoding)
     # Remap the branch name
     tag=sanitize_name(tag,"tag",tagsmap)
     # ignore latest revision
@@ -471,7 +472,7 @@ def branchtip(repo, heads):
       break
   return tip
 
-def verify_heads(ui,repo,cache,force,branchesmap):
+def verify_heads(ui,repo,cache,force,branchesmap,branch_encoding):
   branches={}
   for bn, heads in repo.branchmap().iteritems():
     branches[bn] = branchtip(repo, heads)
@@ -480,6 +481,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
   # get list of hg's branches to verify, don't take all git has
   for _,_,b in l:
+    b=force_utf8(b,branch_encoding)
     b=get_branch(b)
     sanitized_name=sanitize_name(b,"branch",branchesmap)
     sha1=get_git_sha1(sanitized_name)
@@ -507,7 +509,7 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',
+           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',tag_encoding='',branch_encoding='',
            plugins={}):
   def check_cache(filename, contents):
     if len(contents) == 0:
@@ -528,7 +530,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
 
   ui,repo=setup_repo(repourl)
 
-  if not verify_heads(ui,repo,heads_cache,force,branchesmap):
+  if not verify_heads(ui,repo,heads_cache,force,branchesmap,branch_encoding):
     return 1
 
   try:
@@ -574,7 +576,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   save_cache(tipfile,state_cache)
   save_cache(mappingfile,mapping_cache)
 
-  c=export_tags(ui,repo,old_marks,mapping_cache,c,authors,tagsmap)
+  c=export_tags(ui,repo,old_marks,mapping_cache,c,authors,tagsmap,tag_encoding)
 
   sys.stderr.write('Issued %d commands\n' % c)
 
@@ -625,6 +627,10 @@ if __name__=='__main__':
       help="Assume commit and author strings retrieved from Mercurial are encoded in <encoding>")
   parser.add_option("--fe",dest="fn_encoding",
       help="Assume file names from Mercurial are encoded in <filename_encoding>")
+  parser.add_option("--be",dest="branch_encoding",
+      help="Assume branch names from Mercurial are encoded in <branchname_encoding>")
+  parser.add_option("--te",dest="tag_encoding",
+      help="Assume tag names from Mercurial are encoded in <tagname_encoding>")
   parser.add_option("--mappings-are-raw",dest="raw_mappings", default=False,
       help="Assume mappings are raw <key>=<value> lines")
   parser.add_option("--filter-contents",dest="filter_contents",
@@ -682,6 +688,14 @@ if __name__=='__main__':
   if options.fn_encoding!=None:
     fn_encoding=options.fn_encoding
 
+  tag_encoding=encoding
+  if options.tag_encoding!=None:
+    tag_encoding=options.tag_encoding
+
+  branch_encoding=encoding
+  if options.branch_encoding!=None:
+    branch_encoding=options.branch_encoding
+
   plugins=[]
   if options.plugins!=None:
     plugins+=options.plugins
@@ -712,4 +726,5 @@ if __name__=='__main__':
                   authors=a,branchesmap=b,tagsmap=t,
                   sob=options.sob,force=options.force,hgtags=options.hgtags,
                   notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,
+                  tag_encoding=tag_encoding,branch_encoding=branch_encoding,
                   plugins=plugins_dict))
