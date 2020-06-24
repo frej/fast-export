@@ -302,9 +302,10 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
   author = get_author(desc,user,authors)
+  hg_hash=revsymbol(repo,b"%d" % revision).hex()
 
   if plugins and plugins['commit_message_filters']:
-    commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision}
+    commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision, 'hg_hash': hg_hash}
     for filter in plugins['commit_message_filters']:
       filter(commit_data)
     branch = commit_data['branch']
