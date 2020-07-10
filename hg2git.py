@@ -132,7 +132,8 @@ def get_git_sha1(name,type='heads'):
   try:
     # use git-rev-parse to support packed refs
     ref="refs/%s/%s" % (type,name.decode('utf8'))
-    l=subprocess.check_output(["git", "rev-parse", "--verify", "--quiet", ref])
+    l=subprocess.check_output(["git", "rev-parse", "--verify",
+                               "--quiet", ref.encode('utf8')])
     if l == None or len(l) == 0:
       return None
     return l[0:40]
