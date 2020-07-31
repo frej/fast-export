@@ -302,9 +302,10 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
   author = get_author(desc,user,authors)
+  hg_hash=revsymbol(repo,b"%d" % revision).hex()
 
   if plugins and plugins['commit_message_filters']:
-    commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
+    commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision, 'hg_hash': hg_hash}
     for filter in plugins['commit_message_filters']:
       filter(commit_data)
     branch = commit_data['branch']
@@ -475,7 +476,7 @@ def branchtip(repo, heads):
       break
   return tip
 
-def verify_heads(ui,repo,cache,force,branchesmap):
+def verify_heads(ui,repo,cache,force,ignore_unnamed_heads,branchesmap):
   branches={}
   for bn, heads in repo.branchmap().iteritems():
     branches[bn] = branchtip(repo, heads)
@@ -497,21 +498,23 @@ def verify_heads(ui,repo,cache,force,branchesmap):
 
   # verify that branch has exactly one head
   t={}
+  unnamed_heads=False
   for h in repo.filtered(b'visible').heads():
     (_,_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
     if t.get(branch,False):
       stderr_buffer.write(
-        b'Error: repository has at least one unnamed head: hg r%d\n'
+        b'Error: repository has an unnamed head: hg r%d\n'
         % repo.changelog.rev(h)
       )
-      if not force: return False
+      unnamed_heads=True
+      if not force and not ignore_unnamed_heads: return False
     t[branch]=True
-
+  if unnamed_heads and not force and not ignore_unnamed_heads: return False
   return True
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,hgtags=False,notes=False,encoding='',fn_encoding='',
+           sob=False,force=False,ignore_unnamed_heads=False,hgtags=False,notes=False,encoding='',fn_encoding='',
            plugins={}):
   def check_cache(filename, contents):
     if len(contents) == 0:
@@ -532,7 +535,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
 
   ui,repo=setup_repo(repourl)
 
-  if not verify_heads(ui,repo,heads_cache,force,branchesmap):
+  if not verify_heads(ui,repo,heads_cache,force,ignore_unnamed_heads,branchesmap):
     return 1
 
   try:
@@ -618,7 +621,9 @@ if __name__=='__main__':
   parser.add_option("-T","--tags",dest="tagsfile",
       help="Read tags map from TAGSFILE")
   parser.add_option("-f","--force",action="store_true",dest="force",
-      default=False,help="Ignore validation errors by force")
+      default=False,help="Ignore validation errors by force, implies --ignore-unnamed-heads")
+  parser.add_option("--ignore-unnamed-heads",action="store_true",dest="ignore_unnamed_heads",
+      default=False,help="Ignore unnamed head errors")
   parser.add_option("-M","--default-branch",dest="default_branch",
       help="Set the default branch")
   parser.add_option("-o","--origin",dest="origin_name",
@@ -714,6 +719,8 @@ if __name__=='__main__':
   sys.exit(hg2git(options.repourl,m,options.marksfile,options.mappingfile,
                   options.headsfile, options.statusfile,
                   authors=a,branchesmap=b,tagsmap=t,
-                  sob=options.sob,force=options.force,hgtags=options.hgtags,
+                  sob=options.sob,force=options.force,
+                  ignore_unnamed_heads=options.ignore_unnamed_heads,
+                  hgtags=options.hgtags,
                   notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,
                   plugins=plugins_dict))

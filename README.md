@@ -167,7 +167,7 @@ defined filter methods in the [dos2unix](./plugins/dos2unix) and
 [branch_name_in_commit](./plugins/branch_name_in_commit) plugins.
 
 ```
-commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc}
+commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision, 'hg_hash': hg_hash}
 
 def commit_message_filter(self,commit_data):
 ```
@@ -201,6 +201,8 @@ exactly one head each. Otherwise commits to the tip of these heads
 within the branch will get flattened into merge commits. Chris J
 Billington's [hg-export-tool] can help you to handle branches with
 duplicate heads.
+Alternatively, you can use the [head2branch plugin](./plugins/head2branch)
+to create a new named branch from an unnamed head.
 
 hg-fast-export will ignore any files or directories tracked by mercurial
 called `.git`, and will print a warning if it encounters one. Git cannot
