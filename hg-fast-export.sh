@@ -45,7 +45,7 @@ if [ -z "${PYTHON}" ]; then
     exit 1
 fi
 
-USAGE="[--quiet] [-r <repo>] [--force] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
+USAGE="[--quiet] [-r <repo>] [--force] [--ignore-unnamed-heads] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
 GIT_DIR/$PFX-$SFX_STATE by default.
