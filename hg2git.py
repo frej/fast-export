@@ -24,9 +24,11 @@ cfg_master=b'master'
 # default origin name
 origin_name=b''
 # silly regex to see if user field has email address
-user_re=re.compile(b'([^<]+) (<[^>]*>)$')
+user_re=re.compile(b'([^<>]+) (<[^<>]*>)$')
 # silly regex to clean out user names
 user_clean_re=re.compile(b'^["]([^"]+)["]$')
+# regex for characters that need to be replaced in name and address
+user_special_re=re.compile(b'[<>]')
 
 def set_default_branch(name):
   global cfg_master
@@ -55,10 +57,11 @@ def fixup_user(user,authors):
   name,mail,m=b'',b'',user_re.match(user)
   if m==None:
     # if we don't have 'Name <mail>' syntax, extract name
-    # and mail from hg helpers. this seems to work pretty well.
+    # and mail from hg helpers. this seems to work pretty well,
+    # but may still allow an extra '<' or '>' so replace those.
     # if email doesn't contain @, replace it with devnull@localhost
-    name=templatefilters.person(user)
-    mail=b'<%s>' % templatefilters.email(user)
+    name=user_special_re.sub(b'?',templatefilters.person(user))
+    mail=b'<%s>' % user_special_re.sub(b'?',templatefilters.email(user))
     if b'@' not in mail:
       mail = b'<devnull@localhost>'
   else:
