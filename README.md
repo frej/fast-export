@@ -198,11 +198,15 @@ Notes/Limitations
 
 hg-fast-export supports multiple branches but only named branches with
 exactly one head each. Otherwise commits to the tip of these heads
-within the branch will get flattened into merge commits. Chris J
-Billington's [hg-export-tool] can help you to handle branches with
-duplicate heads.
-Alternatively, you can use the [head2branch plugin](./plugins/head2branch)
-to create a new named branch from an unnamed head.
+within the branch will get flattened into merge commits. There are a
+few options to deal with this:
+1. Chris J Billington's [hg-export-tool] can help you to handle branches with
+   duplicate heads.
+2. Use the [head2branch plugin](./plugins/head2branch) to create a new named
+   branch from an unnamed head.
+3. You can ignore unnamed heads with the `-ignore-unnamed-heads` option, which
+   is appropriate in situations such as the extra heads being close commits
+   (abandoned, unmerged changes).
 
 hg-fast-export will ignore any files or directories tracked by mercurial
 called `.git`, and will print a warning if it encounters one. Git cannot
@@ -300,5 +304,12 @@ Frequent Problems
   By design fast export does not touch your working directory, so to
   git it looks like you have deleted all files, when in fact they have
   never been checked out. Just do a checkout of the branch you want.
+
+* `Error: repository has at least one unnamed head: hg r<N>`
+
+  By design, hg-fast-export cannot deal with extra heads on a branch.
+  There are a few options depending on whether the extra heads are
+  in-use/open or normally closed. See [Notes/Limitations](#noteslimitations)
+  section for more details.
 
 [hg-export-tool]: https://github.com/chrisjbillington/hg-export-tool
