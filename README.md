@@ -1,4 +1,4 @@
-hg-fast-export.(sh|py) - mercurial to git converter using git-fast-import
+hg-fast-export.sh - mercurial to git converter using git-fast-import
 =========================================================================
 
 Legal
@@ -225,8 +225,8 @@ possible to use hg-fast-export on remote repositories
 Design
 ------
 
-hg-fast-export.py was designed in a way that doesn't require a 2-pass
-mechanism or any prior repository analysis: if just feeds what it
+hg-fast-export was designed in a way that doesn't require a 2-pass
+mechanism or any prior repository analysis: it just feeds what it
 finds into git-fast-import. This also implies that it heavily relies
 on strictly linear ordering of changesets from hg, i.e. its
 append-only storage model so that changesets hg-fast-export already
