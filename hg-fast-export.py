@@ -294,7 +294,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     brmap[name]=n
     return n
 
-  (revnode,_,user,(time,timezone),files,desc,branch,_)=get_changeset(ui,repo,revision,authors,encoding)
+  (revnode,_,user,(time,timezone),files,desc,branch,extra)=get_changeset(ui,repo,revision,authors,encoding)
   if repo[revnode].hidden():
     return count
 
@@ -308,7 +308,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     commit_data = {'branch': branch, 'parents': parents,
                    'author': author, 'desc': desc,
                    'revision': revision, 'hg_hash': hg_hash,
-                   'committer': user}
+                   'committer': user, 'extra': extra}
     for filter in plugins['commit_message_filters']:
       filter(commit_data)
     branch = commit_data['branch']
