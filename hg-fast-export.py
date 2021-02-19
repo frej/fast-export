@@ -547,7 +547,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   except AttributeError:
     tip=len(repo)
 
-  min=int(state_cache.get('tip',0))
+  min=int(state_cache.get(b'tip',0))
   max=_max
   if _max<0 or max>tip:
     max=tip
@@ -580,8 +580,8 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
     for rev in range(min,max):
       c=export_note(ui,repo,rev,c,authors, encoding, rev == min and min != 0)
 
-  state_cache['tip']=max
-  state_cache['repo']=repourl
+  state_cache[b'tip']=max
+  state_cache[b'repo']=repourl
   save_cache(tipfile,state_cache)
   save_cache(mappingfile,mapping_cache)
 
