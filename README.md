@@ -188,6 +188,8 @@ can be modified by any filter. `file_ctx` is the filecontext from the
 mercurial python library.  After all filters have been run, the values
 are used to add the file to the git commit.
 
+To discard a file, set the `"drop_file"` value in its `file_data` to `True`.
+
 Submodules
 ----------
 See README-SUBMODULES.md for how to convert subrepositories into git

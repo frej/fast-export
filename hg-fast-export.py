@@ -231,7 +231,9 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
       d=file_data['data']
       filename=file_data['filename']
       file_ctx=file_data['file_ctx']
-
+      if file_data.get('drop_file',False):
+        continue # Plugin dropped the file change
+    
     wr(b'M %s inline %s' % (gitmode(manifest.flags(file)),
                            strip_leading_slash(filename)))
     wr(b'data %d' % len(d)) # had some trouble with size()
