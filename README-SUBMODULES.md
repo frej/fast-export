@@ -37,39 +37,46 @@ Create an empty new folder where all the converted git modules will be imported:
     mkdir ~/imported-gits
     cd ~/imported-gits
 
-### Convert all submodules to git:
-    mkdir submodule1
-    cd submodule1
-    git init
-    hg-fast-export.sh -r ~/mercurial/subrepo1
-    cd ..
-    mkdir submodule2
-    cd submodule2
-    git init
-    hg-fast-export.sh -r ~/mercurial/subrepo2
+### Convert all submodules to git
+```bash
+mkdir submodule1
+cd submodule1
+git init
+hg-fast-export.sh -r ~/mercurial/subrepo1
+cd ..
+mkdir submodule2
+cd submodule2
+git init
+hg-fast-export.sh -r ~/mercurial/subrepo2
+```
 
 ### Create mapping file
-    cd ~/imported-gits
-    cat > submodule-mappings << EOF
-    "subrepo/subrepo1"="../submodule1"
-    "subrepo/subrepo2"="../submodule2"
-    EOF
+```bash
+cd ~/imported-gits
+cat > submodule-mappings << EOF
+"subrepo/subrepo1"="../submodule1"
+"subrepo/subrepo2"="../submodule2"
+EOF
+```
 
 ### Convert main repository
-    cd ~/imported-gits
-    mkdir git-main-repo
-    cd git-main-repo
-    git init
-    hg-fast-export.sh -r ~/mercurial --subrepo-map=../submodule-mappings
+```bash
+cd ~/imported-gits
+mkdir git-main-repo
+cd git-main-repo
+git init
+hg-fast-export.sh -r ~/mercurial --subrepo-map=../submodule-mappings
+```
 
 ### Result
 The resulting repository will now contain the subrepo/subrepo1 and
 subrepo/subrepo1 submodules. The created .gitmodules file will look
 like:
-
-    [submodule "subrepo/subrepo1"]
-          path = subrepo/subrepo1
-          url = ../submodule1
-    [submodule "subrepo/subrepo2"]
-          path = subrepo/subrepo2
-          url = ../submodule2
+```bash
+[submodule "subrepo/subrepo1"]
+      path = subrepo/subrepo1
+      url = ../submodule1
+[submodule "subrepo/subrepo2"]
+      path = subrepo/subrepo2
+      url = ../submodule2
+```

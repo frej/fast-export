@@ -42,7 +42,7 @@ Usage
 
 Using hg-fast-export is quite simple for a mercurial repository <repo>:
 
-```
+```bash
 mkdir repo-git # or whatever
 cd repo-git
 git init
@@ -59,7 +59,7 @@ Incremental imports to track hg repos is supported, too.
 Using hg-reset it is quite simple within a git repository that is
 hg-fast-export'ed from mercurial:
 
-```
+```bash
 hg-reset.sh -R <revision>
 ```
 
@@ -88,7 +88,7 @@ old syntax can be enabled by the flag `--mappings-are-raw`.)
 The example authors.map below will translate `User
 <garbage<tab><user@example.com>` to `User <user@example.com>`.
 
-```
+```bash
 -- Start of authors.map --
 "User <garbage\t<user@example.com>"="User <user@example.com>"
 -- End of authors.map --
@@ -111,8 +111,8 @@ branch/tag names. In the future -n will become the default, but in
 order to not break existing incremental conversions, the default
 remains with the old behavior.
 
-By default, the `default` mercurial branch is renamed to the `master` 
-branch on git. If your mercurial repo contains both `default` and 
+By default, the `default` mercurial branch is renamed to the `master`
+branch on git. If your mercurial repo contains both `default` and
 `master` branches, you'll need to override this behavior. Use
 `-M <newName>` to specify what name to give the `default` branch.
 
@@ -126,7 +126,7 @@ standard input, and uses the filter's standard output in place
 of the file's original content. The prototypical use of this feature
 is to convert line endings in text files from CRLF to git's preferred LF:
 
-```
+```bash
 -- Start of crlf-filter.sh --
 #!/bin/sh
 # $1 = pathname of exported file relative to the root of the repo
@@ -152,7 +152,7 @@ add a new folder under the `plugins` directory, with the name of the
 new plugin. Inside, there must be an `__init__.py` file, which contains
 at a minimum:
 
-```
+```python
 def build_filter(args):
     return Filter(args)
 
@@ -166,7 +166,7 @@ Beyond the boilerplate initialization, you can see the two different
 defined filter methods in the [dos2unix](./plugins/dos2unix) and
 [branch_name_in_commit](./plugins/branch_name_in_commit) plugins.
 
-```
+```python
 commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision, 'hg_hash': hg_hash, 'committer': 'committer', 'extra': extra}
 
 def commit_message_filter(self,commit_data):
@@ -177,7 +177,7 @@ above attributes about the commit, and can be modified by any filter. The
 values in the dictionary after filters have been run are used to create the git
 commit.
 
-```
+```python
 file_data = {'filename':filename,'file_ctx':file_ctx,'d':d}
 
 def file_data_filter(self,file_data):
@@ -264,7 +264,7 @@ hygiene](http://www.ericbmerritt.com/2011/09/21/commit-hygiene-and-git.html)
 
 
 Frequent Problems
-=================
+------------------
 
 * git fast-import crashes with: `error: cannot lock ref 'refs/heads/...`
 

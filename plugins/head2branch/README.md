@@ -1,4 +1,4 @@
-## Convert Head to Branch
+##Convert Head to Branch
 
 `fast-export` can only handle one head per branch. This plugin makes it possible
 to create a new branch from a head by specifying the new branch name and

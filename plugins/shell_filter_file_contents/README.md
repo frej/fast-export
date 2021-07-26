@@ -1,4 +1,4 @@
-## Shell Script File Filter
+# Shell Script File Filter
 
 This plugin uses shell scripts in order to perform filtering of files.
 If your preferred scripting is done via shell, this tool is for you.
@@ -18,7 +18,7 @@ although this task is faster performed using the native plugin.
 The script is called with the following syntax:
 `FILTER_CONTENTS <file-path> <hg-hash> <is-binary>`
 
-```
+```bash
 -- Start of crlf-filter.sh --
 #!/bin/sh
 # $1 = pathname of exported file relative to the root of the repo

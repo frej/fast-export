@@ -1,4 +1,4 @@
-## Branch Name in Commit Message
+# Branch Name in Commit Message
 
 Mercurial has a much stronger notion of branches than Git,
 and some parties may not wish to lose the branch information

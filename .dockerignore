@@ -1,0 +1,9 @@
+# Remove git history
+.git
+# Remove GitHub Actions
+.github
+# No need for these
+.gitattributes
+.gitignore
+# Remove tests
+tests/
