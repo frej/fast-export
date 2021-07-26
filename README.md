@@ -88,7 +88,7 @@ old syntax can be enabled by the flag `--mappings-are-raw`.)
 The example authors.map below will translate `User
 <garbage<tab><user@example.com>` to `User <user@example.com>`.
 
-```bash
+```text
 -- Start of authors.map --
 "User <garbage\t<user@example.com>"="User <user@example.com>"
 -- End of authors.map --

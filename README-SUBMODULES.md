@@ -72,7 +72,7 @@ hg-fast-export.sh -r ~/mercurial --subrepo-map=../submodule-mappings
 The resulting repository will now contain the subrepo/subrepo1 and
 subrepo/subrepo1 submodules. The created .gitmodules file will look
 like:
-```bash
+```text
 [submodule "subrepo/subrepo1"]
       path = subrepo/subrepo1
       url = ../submodule1
