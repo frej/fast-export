@@ -262,6 +262,10 @@ hygiene](http://www.ericbmerritt.com/2011/09/21/commit-hygiene-and-git.html)
   how to modify history is in the [Pro Git book, Section
   7.6](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History).
 
+Please do not submit a pull request if you are not willing to spend
+the time required to address review comments or revise the patch until
+it follows the guidelines above. A _take it or leave it_ approach to
+contributing wastes both your and the maintainer's time.
 
 Frequent Problems
 =================
