@@ -266,7 +266,7 @@ def sanitize_name(name,what="branch", mapping={}):
   if not auto_sanitize:
     return mapping.get(name,name)
   n=mapping.get(name,name)
-  p=re.compile(b'([[ ~^:?\\\\*]|\.\.)')
+  p=re.compile(b'([\\[ ~^:?\\\\*]|\.\.)')
   n=p.sub(b'_', n)
   if n[-1:] in (b'/', b'.'): n=n[:-1]+b'_'
   n=b'/'.join([dot(s) for s in n.split(b'/')])
