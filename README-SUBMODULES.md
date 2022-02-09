@@ -27,10 +27,10 @@ command line option.
 
 ## Example
 
-Example mercurial repo folder structure (~/mercurial):
+Example mercurial repo folder structure (~/mercurial) containing two subrepos:
     src/...
-    subrepo/subrepo1
-    subrepo/subrepo2
+    subrepos/subrepo1
+    subrepos/subrepo2
 
 ### Setup
 Create an empty new folder where all the converted git modules will be imported:
@@ -41,18 +41,18 @@ Create an empty new folder where all the converted git modules will be imported:
     mkdir submodule1
     cd submodule1
     git init
-    hg-fast-export.sh -r ~/mercurial/subrepo1
+    hg-fast-export.sh -r ~/mercurial/subrepos/subrepo1
     cd ..
     mkdir submodule2
     cd submodule2
     git init
-    hg-fast-export.sh -r ~/mercurial/subrepo2
+    hg-fast-export.sh -r ~/mercurial/subrepos/subrepo2
 
 ### Create mapping file
     cd ~/imported-gits
     cat > submodule-mappings << EOF
-    "subrepo/subrepo1"="../submodule1"
-    "subrepo/subrepo2"="../submodule2"
+    "subrepos/subrepo1"="../submodule1"
+    "subrepos/subrepo2"="../submodule2"
     EOF
 
 ### Convert main repository
@@ -60,16 +60,16 @@ Create an empty new folder where all the converted git modules will be imported:
     mkdir git-main-repo
     cd git-main-repo
     git init
-    hg-fast-export.sh -r ~/mercurial --subrepo-map=../submodule-mappings
+    hg-fast-export.sh -r ~/mercurial --subrepo-map=~/imported-gits/submodule-mappings
 
 ### Result
-The resulting repository will now contain the subrepo/subrepo1 and
-subrepo/subrepo1 submodules. The created .gitmodules file will look
-like:
+The resulting repository will now contain the submodules at the paths
+`subrepos/subrepo1` and `subrepos/subrepo2`. The created .gitmodules
+file will look like:
 
-    [submodule "subrepo/subrepo1"]
-          path = subrepo/subrepo1
+    [submodule "subrepos/subrepo1"]
+          path = subrepos/subrepo1
           url = ../submodule1
-    [submodule "subrepo/subrepo2"]
-          path = subrepo/subrepo2
+    [submodule "subrepos/subrepo2"]
+          path = subrepos/subrepo2
           url = ../submodule2
