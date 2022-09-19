@@ -133,7 +133,10 @@ is to convert line endings in text files from CRLF to git's preferred LF:
 # $2 = Mercurial's hash of the file
 # $3 = "1" if Mercurial reports the file as binary, otherwise "0"
 
-if [ "$3" == "1" ]; then cat; else dos2unix; fi
+if [ "$3" == "1" ]; then cat; else dos2unix -q; fi
+# -q option in call to dos2unix allows to avoid returning an
+# error code when handling non-ascii based text files (like UTF-16
+# encoded text files)
 -- End of crlf-filter.sh --
 ```
 
