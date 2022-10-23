@@ -434,9 +434,15 @@ def load_mapping(name, filename, mapping_is_raw):
   def process_unicode_escape_sequences(s):
     # Replace unicode escape sequences in the otherwise UTF8-encoded bytestring s with
     # the UTF8-encoded characters they represent. We need to do an additional
-    # .decode('utf8').encode('unicode-escape') to convert any non-ascii characters into
-    # their escape sequences so that the subsequent .decode('unicode-escape') succeeds:
-    return s.decode('utf8').encode('unicode-escape').decode('unicode-escape').encode('utf8')
+    # .decode('utf8').encode('ascii', 'backslashreplace') to convert any non-ascii
+    # characters into their escape sequences so that the subsequent
+    # .decode('unicode-escape') succeeds:
+    return (
+      s.decode('utf8')
+      .encode('ascii', 'backslashreplace')
+      .decode('unicode-escape')
+      .encode('utf8')
+    )
 
   def parse_quoted_line(line):
     m=quoted_regexp.match(line)
