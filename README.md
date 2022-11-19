@@ -207,7 +207,7 @@ few options to deal with this:
    duplicate heads.
 2. Use the [head2branch plugin](./plugins/head2branch) to create a new named
    branch from an unnamed head.
-3. You can ignore unnamed heads with the `-ignore-unnamed-heads` option, which
+3. You can ignore unnamed heads with the `--ignore-unnamed-heads` option, which
    is appropriate in situations such as the extra heads being close commits
    (abandoned, unmerged changes).
 
