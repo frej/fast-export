@@ -197,7 +197,7 @@ def refresh_gitmodules(ctx):
 
   if len(gitmodules):
     wr(b'M 100644 inline .gitmodules')
-    wr(b'data %d' % (len(gitmodules)+1))
+    wr(b'data %d' % (len(gitmodules)))
     wr(gitmodules)
 
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
@@ -315,7 +315,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     parents = commit_data['parents']
     author = commit_data['author']
     user = commit_data['committer']
-    desc = commit_data['desc']
+    desc = commit_data['desc'] + b'\n'
 
   if len(parents)==0 and revision != 0:
     wr(b'reset refs/heads/%s' % branch)
@@ -325,9 +325,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   if sob:
     wr(b'author %s %d %s' % (author,time,timezone))
   wr(b'committer %s %d %s' % (user,time,timezone))
-  wr(b'data %d' % (len(desc)+1)) # wtf?
+  wr(b'data %d' % (len(desc)))
   wr(desc)
-  wr()
 
   ctx=revsymbol(repo, b"%d" % revision)
   man=ctx.manifest()
@@ -389,7 +388,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
   wr(b'N inline :%d' % (revision+1))
   hg_hash=revsymbol(repo,b"%d" % revision).hex()
   wr(b'data %d' % (len(hg_hash)))
-  wr_no_nl(hg_hash)
+  wr(hg_hash)
   wr()
   return checkpoint(count)
 
