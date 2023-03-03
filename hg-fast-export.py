@@ -51,8 +51,7 @@ def wr_no_nl(msg=b''):
     stdout_buffer.write(msg)
 
 def wr(msg=b''):
-  wr_no_nl(msg)
-  stdout_buffer.write(b'\n')
+  wr_no_nl(msg + b'\n')
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
 def wr_data(data):
