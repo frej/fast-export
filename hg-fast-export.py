@@ -55,6 +55,10 @@ def wr(msg=b''):
   stdout_buffer.write(b'\n')
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
 
+def wr_data(data):
+  wr(b'data %d' % (len(data)))
+  wr(data)
+
 def checkpoint(count):
   count=count+1
   if cfg_checkpoint_count>0 and count%cfg_checkpoint_count==0:
@@ -197,8 +201,7 @@ def refresh_gitmodules(ctx):
 
   if len(gitmodules):
     wr(b'M 100644 inline .gitmodules')
-    wr(b'data %d' % (len(gitmodules)))
-    wr(gitmodules)
+    wr_data(gitmodules)
 
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
@@ -325,8 +328,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   if sob:
     wr(b'author %s %d %s' % (author,time,timezone))
   wr(b'committer %s %d %s' % (user,time,timezone))
-  wr(b'data %d' % (len(desc)))
-  wr(desc)
+  wr_data(desc)
 
   ctx=revsymbol(repo, b"%d" % revision)
   man=ctx.manifest()
@@ -387,8 +389,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
     wr(b'from refs/notes/hg^0')
   wr(b'N inline :%d' % (revision+1))
   hg_hash=revsymbol(repo,b"%d" % revision).hex()
-  wr(b'data %d' % (len(hg_hash)))
-  wr(hg_hash)
+  wr_data(hg_hash)
   wr()
   return checkpoint(count)
 
