@@ -43,11 +43,10 @@ Usage
 Using hg-fast-export is quite simple for a mercurial repository <repo>:
 
 ```
-mkdir repo-git # or whatever
+git init repo-git # or whatever
 cd repo-git
-git init
 hg-fast-export.sh -r <local-repo>
-git checkout HEAD
+git checkout
 ```
 
 Please note that hg-fast-export does not automatically check out the
