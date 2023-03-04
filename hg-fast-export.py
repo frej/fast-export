@@ -51,9 +51,12 @@ def wr_no_nl(msg=b''):
     stdout_buffer.write(msg)
 
 def wr(msg=b''):
-  wr_no_nl(msg)
-  stdout_buffer.write(b'\n')
+  wr_no_nl(msg + b'\n')
   #map(lambda x: sys.stderr.write('\t[%s]\n' % x),msg.split('\n'))
+
+def wr_data(data):
+  wr(b'data %d' % (len(data)))
+  wr(data)
 
 def checkpoint(count):
   count=count+1
@@ -197,8 +200,7 @@ def refresh_gitmodules(ctx):
 
   if len(gitmodules):
     wr(b'M 100644 inline .gitmodules')
-    wr(b'data %d' % (len(gitmodules)+1))
-    wr(gitmodules)
+    wr_data(gitmodules)
 
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
@@ -315,7 +317,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     parents = commit_data['parents']
     author = commit_data['author']
     user = commit_data['committer']
-    desc = commit_data['desc']
+    desc = commit_data['desc'] + b'\n'
 
   if len(parents)==0 and revision != 0:
     wr(b'reset refs/heads/%s' % branch)
@@ -325,9 +327,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   if sob:
     wr(b'author %s %d %s' % (author,time,timezone))
   wr(b'committer %s %d %s' % (user,time,timezone))
-  wr(b'data %d' % (len(desc)+1)) # wtf?
-  wr(desc)
-  wr()
+  wr_data(desc)
 
   ctx=revsymbol(repo, b"%d" % revision)
   man=ctx.manifest()
@@ -388,8 +388,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
     wr(b'from refs/notes/hg^0')
   wr(b'N inline :%d' % (revision+1))
   hg_hash=revsymbol(repo,b"%d" % revision).hex()
-  wr(b'data %d' % (len(hg_hash)))
-  wr_no_nl(hg_hash)
+  wr_data(hg_hash)
   wr()
   return checkpoint(count)
 
