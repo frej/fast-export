@@ -74,35 +74,34 @@ def file_mismatch(f1,f2):
   """See if two revisions of a file are not equal."""
   return node.hex(f1)!=node.hex(f2)
 
-def split_dict(dleft,dright,l=[],c=[],r=[],match=file_mismatch):
+def split_dict(dleft,dright,c=[],r=[],match=file_mismatch):
   """Loop over our repository and find all changed and missing files."""
   for left in dleft.keys():
     right=dright.get(left,None)
     if right==None:
-      # we have the file but our parent hasn't: add to left set
-      l.append(left)
+      # we have the file but our parent hasn't: add
+      c.append(left)
     elif match(dleft[left],right) or gitmode(dleft.flags(left))!=gitmode(dright.flags(left)):
-      # we have it but checksums mismatch: add to center set
+      # we have it but checksums mismatch: add
       c.append(left)
   for right in dright.keys():
     left=dleft.get(right,None)
     if left==None:
-      # if parent has file but we don't: add to right set
+      # if parent has file but we don't: remove
       r.append(right)
     # change is already handled when comparing child against parent
-  return l,c,r
+  return c,r
 
 def get_filechanges(repo,revision,parents,mleft):
   """Given some repository and revision, find all changed/deleted files."""
-  l,c,r=[],[],[]
+  c,r=[],[]
   for p in parents:
     if p<0: continue
     mright=repo[p].manifest()
-    l,c,r=split_dict(mleft,mright,l,c,r)
-  l.sort()
+    c,r=split_dict(mleft,mright,c,r)
   c.sort()
   r.sort()
-  return c+l,r
+  return c,r
 
 def get_author(logmessage,committer,authors):
   """As git distincts between author and committer of a patch, try to
