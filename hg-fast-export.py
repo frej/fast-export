@@ -336,8 +336,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   if len(parents) == 0:
     # first revision: feed in full manifest
-    added=man.keys()
-    added.sort()
+    added=files
     type='full'
   else:
     wr(b'from %s' % revnum_to_revref(parents[0], old_marks))
