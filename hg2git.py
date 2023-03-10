@@ -81,22 +81,13 @@ def get_branch(name):
   return name
 
 def get_changeset(ui,repo,revision,authors={},encoding=''):
-  # Starting with Mercurial 4.6 lookup no longer accepts raw hashes
-  # for lookups. Work around it by changing our behaviour depending on
-  # how it fails
-  try:
-    node=repo.lookup(revision)
-  except (TypeError, hgerror.ProgrammingError):
-    node=binnode(revsymbol(repo, b"%d" % revision)) # We were given a numeric rev
-  except hgerror.RepoLookupError:
-    node=revision # We got a raw hash
   (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(revision)
   if encoding:
     user=user.decode(encoding).encode('utf8')
     desc=desc.decode(encoding).encode('utf8')
   tz=b"%+03d%02d" % (-timezone // 3600, ((-timezone % 3600) // 60))
   branch=get_branch(extra.get(b'branch', b''))
-  return (node,manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
+  return (manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
 
 def mangle_key(key):
   return key

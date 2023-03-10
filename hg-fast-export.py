@@ -296,7 +296,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     brmap[name]=n
     return n
 
-  (revnode,_,user,(time,timezone),files,desc,branch,extra)=get_changeset(ui,repo,revision,authors,encoding)
+  (_,user,(time,timezone),files,desc,branch,extra)=get_changeset(ui,repo,revision,authors,encoding)
   if repo[revision].hidden():
     return count
 
@@ -375,7 +375,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   return checkpoint(count)
 
 def export_note(ui,repo,revision,count,authors,encoding,is_first):
-  (revnode,_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
+  (_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
   if repo[revision].hidden():
     return count
 
