@@ -561,7 +561,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
     max=tip
 
   for rev in range(0,max):
-    (revnode,_,_,_,_,_,_,_)=get_changeset(ui,repo,rev,authors)
+    revnode=repo[rev].node()
     if repo[revnode].hidden():
       continue
     mapping_cache[hexlify(revnode)] = b"%d" % rev
