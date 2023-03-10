@@ -561,10 +561,10 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
     max=tip
 
   for rev in range(0,max):
-    revnode=repo[rev].node()
-    if repo[revnode].hidden():
+    ctx=repo[rev]
+    if ctx.hidden():
       continue
-    mapping_cache[hexlify(revnode)] = b"%d" % rev
+    mapping_cache[ctx.hex()] = b"%d" % rev
 
   if submodule_mappings:
     # Make sure that all mercurial submodules are registered in the submodule-mappings file
