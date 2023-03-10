@@ -297,9 +297,10 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   ctx=repo[revision]
 
-  (_,user,(time,timezone),files,desc,branch,extra)=get_changeset(ui,repo,revision,authors,encoding)
   if ctx.hidden():
     return count
+
+  (_,user,(time,timezone),files,desc,branch,extra)=get_changeset(ui,repo,revision,authors,encoding)
 
   branch=get_branchname(branch)
 
@@ -377,9 +378,10 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 def export_note(ui,repo,revision,count,authors,encoding,is_first):
   ctx = repo[revision]
 
-  (_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
   if ctx.hidden():
     return count
+
+  (_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
 
   wr(b'commit refs/notes/hg')
   wr(b'committer %s %d %s' % (user,time,timezone))
