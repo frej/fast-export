@@ -512,7 +512,7 @@ def verify_heads(ui,repo,cache,force,ignore_unnamed_heads,branchesmap):
   t={}
   unnamed_heads=False
   for h in repo.filtered(b'visible').heads():
-    (_,_,_,_,_,_,branch,_)=get_changeset(ui,repo,h)
+    branch=get_branch(repo[h].branch())
     if t.get(branch,False):
       stderr_buffer.write(
         b'Error: repository has an unnamed head: hg r%d\n'
