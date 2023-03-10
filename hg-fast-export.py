@@ -295,15 +295,17 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     brmap[name]=n
     return n
 
+  ctx=repo[revision]
+
   (_,user,(time,timezone),files,desc,branch,extra)=get_changeset(ui,repo,revision,authors,encoding)
-  if repo[revision].hidden():
+  if ctx.hidden():
     return count
 
   branch=get_branchname(branch)
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
   author = get_author(desc,user,authors)
-  hg_hash=repo[revision].hex()
+  hg_hash=ctx.hex()
 
   if plugins and plugins['commit_message_filters']:
     commit_data = {'branch': branch, 'parents': parents,
@@ -328,7 +330,6 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   wr(b'committer %s %d %s' % (user,time,timezone))
   wr_data(desc)
 
-  ctx=repo[revision]
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
@@ -374,8 +375,10 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   return checkpoint(count)
 
 def export_note(ui,repo,revision,count,authors,encoding,is_first):
+  ctx = repo[revision]
+
   (_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
-  if repo[revision].hidden():
+  if ctx.hidden():
     return count
 
   wr(b'commit refs/notes/hg')
@@ -384,7 +387,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
   if is_first:
     wr(b'from refs/notes/hg^0')
   wr(b'N inline :%d' % (revision+1))
-  hg_hash=repo[revision].hex()
+  hg_hash=ctx.hex()
   wr_data(hg_hash)
   wr()
   return checkpoint(count)
