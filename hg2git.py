@@ -95,7 +95,7 @@ def get_changeset(ui,repo,revision,authors={},encoding=''):
     user=user.decode(encoding).encode('utf8')
     desc=desc.decode(encoding).encode('utf8')
   tz=b"%+03d%02d" % (-timezone // 3600, ((-timezone % 3600) // 60))
-  branch=get_branch(extra.get(b'branch', b'master'))
+  branch=get_branch(extra.get(b'branch', b''))
   return (node,manifest,fixup_user(user,authors),(time,tz),files,desc,branch,extra)
 
 def mangle_key(key):
