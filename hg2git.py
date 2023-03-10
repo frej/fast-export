@@ -5,7 +5,7 @@
 
 from mercurial import hg,util,ui,templatefilters
 from mercurial import error as hgerror
-from mercurial.scmutil import revsymbol,binnode
+from mercurial.scmutil import binnode
 
 import re
 import os

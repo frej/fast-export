@@ -4,7 +4,6 @@
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from mercurial import node
-from mercurial.scmutil import revsymbol
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
@@ -98,7 +97,7 @@ def get_filechanges(repo,revision,parents,mleft):
   l,c,r=[],[],[]
   for p in parents:
     if p<0: continue
-    mright=revsymbol(repo,b"%d" %p).manifest()
+    mright=repo[p].manifest()
     l,c,r=split_dict(mleft,mright,l,c,r)
   l.sort()
   c.sort()
@@ -304,7 +303,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
   author = get_author(desc,user,authors)
-  hg_hash=revsymbol(repo,b"%d" % revision).hex()
+  hg_hash=repo[revision].hex()
 
   if plugins and plugins['commit_message_filters']:
     commit_data = {'branch': branch, 'parents': parents,
@@ -329,7 +328,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   wr(b'committer %s %d %s' % (user,time,timezone))
   wr_data(desc)
 
-  ctx=revsymbol(repo, b"%d" % revision)
+  ctx=repo[revision]
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
@@ -385,7 +384,7 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
   if is_first:
     wr(b'from refs/notes/hg^0')
   wr(b'N inline :%d' % (revision+1))
-  hg_hash=revsymbol(repo,b"%d" % revision).hex()
+  hg_hash=repo[revision].hex()
   wr_data(hg_hash)
   wr()
   return checkpoint(count)
@@ -569,7 +568,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   if submodule_mappings:
     # Make sure that all mercurial submodules are registered in the submodule-mappings file
     for rev in range(0,max):
-      ctx=revsymbol(repo,b"%d" % rev)
+      ctx=repo[rev]
       if ctx.hidden():
         continue
       if ctx.substate:
