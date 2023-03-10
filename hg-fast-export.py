@@ -297,7 +297,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     return n
 
   (revnode,_,user,(time,timezone),files,desc,branch,extra)=get_changeset(ui,repo,revision,authors,encoding)
-  if repo[revnode].hidden():
+  if repo[revision].hidden():
     return count
 
   branch=get_branchname(branch)
@@ -344,7 +344,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       # later non-merge revision: feed in changed manifest
       # if we have exactly one parent, just take the changes from the
       # manifest without expensively comparing checksums
-      f=repo.status(parents[0],revnode)
+      f=repo.status(parents[0],revision)
       added,changed,removed=f.added,f.modified,f.removed
       type='simple delta'
     else: # a merge with two parents
@@ -376,7 +376,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
 def export_note(ui,repo,revision,count,authors,encoding,is_first):
   (revnode,_,user,(time,timezone),_,_,_,_)=get_changeset(ui,repo,revision,authors,encoding)
-  if repo[revnode].hidden():
+  if repo[revision].hidden():
     return count
 
   wr(b'commit refs/notes/hg')

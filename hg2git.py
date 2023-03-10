@@ -90,7 +90,7 @@ def get_changeset(ui,repo,revision,authors={},encoding=''):
     node=binnode(revsymbol(repo, b"%d" % revision)) # We were given a numeric rev
   except hgerror.RepoLookupError:
     node=revision # We got a raw hash
-  (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(node)
+  (manifest,user,(time,timezone),files,desc,extra)=repo.changelog.read(revision)
   if encoding:
     user=user.decode(encoding).encode('utf8')
     desc=desc.decode(encoding).encode('utf8')
