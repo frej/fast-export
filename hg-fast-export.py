@@ -379,8 +379,6 @@ def export_note(ui,repo,revision,count,authors,encoding,is_first):
   if repo[revnode].hidden():
     return count
 
-  parents = [p for p in repo.changelog.parentrevs(revision) if p >= 0]
-
   wr(b'commit refs/notes/hg')
   wr(b'committer %s %d %s' % (user,time,timezone))
   wr(b'data 0')
