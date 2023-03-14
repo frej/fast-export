@@ -92,15 +92,31 @@ def split_dict(dleft,dright,c=[],r=[],match=file_mismatch):
     # change is already handled when comparing child against parent
   return c,r
 
-def get_filechanges(repo,revision,parents,mleft):
+def get_filechanges(repo,revision,parents,files,mleft):
   """Given some repository and revision, find all changed/deleted files."""
-  modified,removed=[],[]
-  for p in parents:
-    if p<0: continue
-    mright=repo[p].manifest()
-    modified,removed=split_dict(mleft,mright,modified,removed)
-  modified.sort()
-  removed.sort()
+  if not parents:
+    # first revision: feed in full manifest
+    modified=files
+    removed=[]
+  else:
+    if len(parents) == 1:
+      # later non-merge revision: feed in changed manifest
+      # if we have exactly one parent, just take the changes from the
+      # manifest without expensively comparing checksums
+      f=repo.status(parents[0],revision)
+      modified=f.modified + f.added
+      removed=f.removed
+    else: # a merge with two parents
+      # later merge revision: feed in changed manifest
+      # for many files comparing checksums is expensive so only do it for
+      # merges where we really need it due to hg's revlog logic
+      modified,removed=[],[]
+      for p in parents:
+        if p<0: continue
+        mright=repo[p].manifest()
+        modified,removed=split_dict(mleft,mright,modified,removed)
+      modified.sort()
+      removed.sort()
   return modified,removed
 
 def get_author(logmessage,committer,authors):
@@ -331,29 +347,18 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   wr_data(desc)
 
   man=ctx.manifest()
-  modified,removed,type=[],[],''
 
   if not parents:
-    # first revision: feed in full manifest
-    modified=files
     type='full'
   else:
     wr(b'from %s' % revnum_to_revref(parents[0], old_marks))
     if len(parents) == 1:
-      # later non-merge revision: feed in changed manifest
-      # if we have exactly one parent, just take the changes from the
-      # manifest without expensively comparing checksums
-      f=repo.status(parents[0],revision)
-      modified=f.modified + f.added
-      removed=f.removed
       type='simple delta'
     else: # a merge with two parents
       wr(b'merge %s' % revnum_to_revref(parents[1], old_marks))
-      # later merge revision: feed in changed manifest
-      # for many files comparing checksums is expensive so only do it for
-      # merges where we really need it due to hg's revlog logic
-      modified,removed=get_filechanges(repo,revision,parents,man)
       type='thorough delta'
+
+  modified,removed=get_filechanges(repo,revision,parents,files,man)
 
   stderr_buffer.write(
     b'%s: Exporting %s revision %d/%d with %d/%d modified/removed files\n'
