@@ -94,14 +94,14 @@ def split_dict(dleft,dright,c=[],r=[],match=file_mismatch):
 
 def get_filechanges(repo,revision,parents,mleft):
   """Given some repository and revision, find all changed/deleted files."""
-  c,r=[],[]
+  modified,removed=[],[]
   for p in parents:
     if p<0: continue
     mright=repo[p].manifest()
-    c,r=split_dict(mleft,mright,c,r)
-  c.sort()
-  r.sort()
-  return c,r
+    modified,removed=split_dict(mleft,mright,modified,removed)
+  modified.sort()
+  removed.sort()
+  return modified,removed
 
 def get_author(logmessage,committer,authors):
   """As git distincts between author and committer of a patch, try to
