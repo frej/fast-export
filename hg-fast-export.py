@@ -111,9 +111,8 @@ def get_filechanges(repo,revision,parents,files,mleft):
       # for many files comparing checksums is expensive so only do it for
       # merges where we really need it due to hg's revlog logic
       modified,removed=[],[]
-      for p in parents:
-        mright=repo[p].manifest()
-        modified,removed=split_dict(mleft,mright,modified,removed)
+      mright=repo[parents[0]].manifest()
+      modified,removed=split_dict(mleft,mright,modified,removed)
       modified.sort()
       removed.sort()
   return modified,removed
