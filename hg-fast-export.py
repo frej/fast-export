@@ -112,7 +112,6 @@ def get_filechanges(repo,revision,parents,files,mleft):
       # merges where we really need it due to hg's revlog logic
       modified,removed=[],[]
       for p in parents:
-        if p<0: continue
         mright=repo[p].manifest()
         modified,removed=split_dict(mleft,mright,modified,removed)
       modified.sort()
