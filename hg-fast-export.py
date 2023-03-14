@@ -73,14 +73,11 @@ def get_filechanges(repo,revision,parents,files):
   """Given some repository and revision, find all changed/deleted files."""
   if not parents:
     # first revision: feed in full manifest
-    modified=files
-    removed=[]
+    return files,[]
   else:
     # take the changes from the first parent
     f=repo.status(parents[0],revision)
-    modified=f.modified + f.added
-    removed=f.removed
-  return modified,removed
+    return f.modified+f.added,f.removed
 
 def get_author(logmessage,committer,authors):
   """As git distincts between author and committer of a patch, try to
