@@ -334,7 +334,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   man=ctx.manifest()
   added,changed,removed,type=[],[],[],''
 
-  if len(parents) == 0:
+  if not parents:
     # first revision: feed in full manifest
     added=files
     type='full'
