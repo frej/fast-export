@@ -1,12 +1,21 @@
 on:
   push:
+    branches: [master]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [master]
 
 jobs:
   test:
+    name: Run test suite
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Install sharness
-        run:
-          git clone --depth 1 https://github.com/felipec/sharness.git t/sharness
-      - run: SHARNESS_TEST_SRCDIR=t/sharness t/main.t
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: 'recursive'
+
+    - name: Run tests
+      run: ./run-tests
