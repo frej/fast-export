@@ -1,0 +1,49 @@
+#!/bin/bash
+
+READLINK="readlink"
+if command -v greadlink > /dev/null; then
+  READLINK="greadlink" # Prefer greadlink over readlink
+fi
+
+if ! $READLINK -f "$(which "$0")" > /dev/null 2>&1 ; then
+    ROOT="$(dirname "$(which "$0")")"
+    if [ ! -f "$ROOT/hg-fast-export.py" ] ; then
+	echo "test runner requires a readlink implementation which knows" \
+	     " how to canonicalize paths in order to be called via a symlink."
+	exit 1
+    fi
+else
+    ROOT="$(dirname "$($READLINK -f "$(which "$0")")")"
+fi
+
+
+export SHARNESS_TEST_SRCDIR="${SHARNESS_TEST_SRCDIR:-$ROOT/t/sharness}"
+
+TESTS=$(find $ROOT/t -maxdepth 1 -name \*.t -executable -type f)
+
+failed=0
+type parallel >& /dev/null
+if [ $? -eq 0 ]; then
+    echo "Using parallel to run tests"
+    function F() {
+	echo "Running test $1"
+	$1
+    }
+    export -f F
+    parallel F ::: $TESTS || failed=1
+else
+    for i in $TESTS ; do
+	echo "Running test $i"
+	$i || failed=1
+    done
+fi
+
+if [ "$failed" -eq "0" ]; then
+    echo "All tests passed";
+else
+    echo "There were failed tests";
+fi
+
+exit $failed
+
+
