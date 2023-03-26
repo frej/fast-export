@@ -3,7 +3,6 @@
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
-from mercurial import node
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
 from hg2git import load_cache,save_cache,get_git_sha1,set_default_branch,set_origin_name
 from optparse import OptionParser
@@ -70,39 +69,15 @@ def revnum_to_revref(rev, old_marks):
   or a mark)"""
   return old_marks.get(rev) or b':%d' % (rev+1)
 
-def file_mismatch(f1,f2):
-  """See if two revisions of a file are not equal."""
-  return node.hex(f1)!=node.hex(f2)
-
-def split_dict(dleft,dright,l=[],c=[],r=[],match=file_mismatch):
-  """Loop over our repository and find all changed and missing files."""
-  for left in dleft.keys():
-    right=dright.get(left,None)
-    if right==None:
-      # we have the file but our parent hasn't: add to left set
-      l.append(left)
-    elif match(dleft[left],right) or gitmode(dleft.flags(left))!=gitmode(dright.flags(left)):
-      # we have it but checksums mismatch: add to center set
-      c.append(left)
-  for right in dright.keys():
-    left=dleft.get(right,None)
-    if left==None:
-      # if parent has file but we don't: add to right set
-      r.append(right)
-    # change is already handled when comparing child against parent
-  return l,c,r
-
-def get_filechanges(repo,revision,parents,mleft):
+def get_filechanges(repo,revision,parents,files):
   """Given some repository and revision, find all changed/deleted files."""
-  l,c,r=[],[],[]
-  for p in parents:
-    if p<0: continue
-    mright=repo[p].manifest()
-    l,c,r=split_dict(mleft,mright,l,c,r)
-  l.sort()
-  c.sort()
-  r.sort()
-  return l,c,r
+  if not parents:
+    # first revision: feed in full manifest
+    return files,[]
+  else:
+    # take the changes from the first parent
+    f=repo.status(parents[0],revision)
+    return f.modified+f.added,f.removed
 
 def get_author(logmessage,committer,authors):
   """As git distincts between author and committer of a patch, try to
@@ -332,33 +307,22 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   wr_data(desc)
 
   man=ctx.manifest()
-  added,changed,removed,type=[],[],[],''
 
-  if len(parents) == 0:
-    # first revision: feed in full manifest
-    added=man.keys()
-    added.sort()
+  if not parents:
     type='full'
   else:
     wr(b'from %s' % revnum_to_revref(parents[0], old_marks))
     if len(parents) == 1:
-      # later non-merge revision: feed in changed manifest
-      # if we have exactly one parent, just take the changes from the
-      # manifest without expensively comparing checksums
-      f=repo.status(parents[0],revision)
-      added,changed,removed=f.added,f.modified,f.removed
       type='simple delta'
     else: # a merge with two parents
       wr(b'merge %s' % revnum_to_revref(parents[1], old_marks))
-      # later merge revision: feed in changed manifest
-      # for many files comparing checksums is expensive so only do it for
-      # merges where we really need it due to hg's revlog logic
-      added,changed,removed=get_filechanges(repo,revision,parents,man)
       type='thorough delta'
 
+  modified,removed=get_filechanges(repo,revision,parents,files)
+
   stderr_buffer.write(
-    b'%s: Exporting %s revision %d/%d with %d/%d/%d added/changed/removed files\n'
-    % (branch, type.encode(), revision + 1, max, len(added), len(changed), len(removed))
+    b'%s: Exporting %s revision %d/%d with %d/%d modified/removed files\n'
+    % (branch, type.encode(), revision + 1, max, len(modified), len(removed))
   )
 
   for filename in removed:
@@ -369,8 +333,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
       remove_gitmodules(ctx)
     wr(b'D %s' % filename)
 
-  export_file_contents(ctx,man,added,hgtags,fn_encoding,plugins)
-  export_file_contents(ctx,man,changed,hgtags,fn_encoding,plugins)
+  export_file_contents(ctx,man,modified,hgtags,fn_encoding,plugins)
   wr()
 
   return checkpoint(count)
