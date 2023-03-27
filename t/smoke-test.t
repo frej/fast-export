@@ -8,7 +8,7 @@
 
 test_description='Smoke test'
 
-. "${SHARNESS_TEST_SRCDIR-/usr/share/sharness}"/sharness.sh || exit 1
+. "${SHARNESS_TEST_SRCDIR-$(dirname "$0")/sharness}"/sharness.sh || exit 1
 
 check() {
 	echo "$3" > expected &&
