@@ -1,3 +1,5 @@
+name: CI
+
 on:
   push:
     branches: [master]
@@ -19,3 +21,11 @@ jobs:
 
     - name: Run tests
       run: make -C t
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: python
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
