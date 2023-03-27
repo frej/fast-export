@@ -18,4 +18,4 @@ jobs:
         submodules: 'recursive'
 
     - name: Run tests
-      run: ./run-tests
+      run: make -C t
