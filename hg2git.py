@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
@@ -11,13 +11,6 @@ import re
 import os
 import sys
 import subprocess
-
-PY2 = sys.version_info.major < 3
-if PY2:
-  str = unicode
-  fsencode = lambda s: s.encode(sys.getfilesystemencoding())
-else:
-  from os import fsencode
 
 # default git branch name
 cfg_master=b'master'
@@ -44,7 +37,7 @@ def setup_repo(url):
     myui.setconfig(b'ui', b'interactive', b'off')
     # Avoids a warning when the repository has obsolete markers
     myui.setconfig(b'experimental', b'evolution.createmarkers', True)
-  return myui,hg.repository(myui, fsencode(url)).unfiltered()
+  return myui,hg.repository(myui, os.fsencode(url)).unfiltered()
 
 def fixup_user(user,authors):
   user=user.strip(b"\"")
