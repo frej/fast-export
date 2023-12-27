@@ -45,6 +45,14 @@ if [ -z "${PYTHON}" ]; then
     exit 1
 fi
 
+"${PYTHON}" -c 'import sys; exit(sys.version_info.major==3 and sys.version_info.minor >= 7)'
+
+if [ $? -eq 0 ]; then
+    echo "Could not find an interpreter for a supported Python version (>= 3.7)" \
+        "Please use the 'PYTHON' environment variable to specify the interpreter to use."
+    exit 1
+fi
+
 USAGE="[--quiet] [-r <repo>] [--force] [--ignore-unnamed-heads] [-m <max>] [-s] [--hgtags] [-A <file>] [-B <file>] [-T <file>] [-M <name>] [-o <name>] [--hg-hash] [-e <encoding>]"
 LONG_USAGE="Import hg repository <repo> up to either tip or <max>
 If <repo> is omitted, use last hg repository as obtained from state file,
