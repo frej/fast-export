@@ -29,7 +29,7 @@ GFI_OPTS=""
 
 if [ -z "${PYTHON}" ]; then
     # $PYTHON is not set, so we try to find a working python with mercurial:
-    for python_cmd in python2 python python3; do
+    for python_cmd in python3 python; do
         if command -v $python_cmd > /dev/null; then
             $python_cmd -c 'from mercurial.scmutil import revsymbol' 2> /dev/null
             if [ $? -eq 0 ]; then
