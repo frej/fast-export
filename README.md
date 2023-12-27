@@ -29,9 +29,9 @@ first time.
 System Requirements
 -------------------
 
-This project depends on Python 3.5+, and the Mercurial >= 5.2 package.
-If Python is not installed, install it before proceeding. The Mercurial
-package can be installed with `pip install mercurial`.
+This project depends on Python (>=3.7) and the Mercurial package (>=
+5.2).  If Python is not installed, install it before proceeding. The
+Mercurial package can be installed with `pip install mercurial`.
 
 On windows the bash that comes with "Git for Windows" is known to work
 well.
