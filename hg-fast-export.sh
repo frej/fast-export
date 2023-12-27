@@ -86,6 +86,14 @@ case "$1" in
       echo ""
       echo "$LONG_USAGE"
       exit 0
+      ;;
+
+    --debug)
+      echo -n "Using Python: "
+      "${PYTHON}" --version
+      echo -n "Using Mercurial: "
+      hg --version
+      exit 0
 esac
 
 IS_BARE=$(git rev-parse --is-bare-repository) \
