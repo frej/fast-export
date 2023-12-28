@@ -1,0 +1,15 @@
+name: Weekly CI
+
+on:
+  schedule:
+#   - cron: '47 4 * * 5'
+    - cron: '30 * * * *'
+
+jobs:
+  weekly-test:
+    name: Weekly CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Foo
+        run: echo Foo
