@@ -179,7 +179,7 @@ values in the dictionary after filters have been run are used to create the git
 commit.
 
 ```
-file_data = {'filename':filename,'file_ctx':file_ctx,'d':d}
+file_data = {'filename':filename,'file_ctx':file_ctx,'data':file_contents}
 
 def file_data_filter(self,file_data):
 ```
@@ -188,6 +188,11 @@ The dictionary `file_data` contains the above attributes about the file, and
 can be modified by any filter. `file_ctx` is the filecontext from the
 mercurial python library.  After all filters have been run, the values
 are used to add the file to the git commit.
+
+The `file_data_filter` method is also called when files are deleted,
+but in this case the `data` and `file_ctx` keys map to None. This is
+so that a filter which modifies file names can apply the same name
+transformations when files are deleted.
 
 Submodules
 ----------

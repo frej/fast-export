@@ -5,7 +5,7 @@ PluginFolder = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..","pl
 MainModule = "__init__"
 
 def get_plugin(name, plugin_path):
-    search_dirs = [PluginFolder]
+    search_dirs = [PluginFolder, '.']
     if plugin_path:
         search_dirs = [plugin_path] + search_dirs
     for dir in search_dirs:
