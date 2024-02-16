@@ -311,9 +311,18 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     % (branch, type.encode(), revision + 1, max, len(modified), len(removed))
   )
 
-  for filename in removed:
+  for file in removed:
     if fn_encoding:
-      filename=filename.decode(fn_encoding).encode('utf8')
+      filename=file.decode(fn_encoding).encode('utf8')
+    else:
+      filename=file
+
+    if plugins and plugins['file_data_filters']:
+      file_data = {'filename':filename, 'file_ctx':None, 'data':None}
+      for filter in plugins['file_data_filters']:
+        filter(file_data)
+      filename=file_data['filename']
+
     filename=strip_leading_slash(filename)
     if filename==b'.hgsub':
       remove_gitmodules(ctx)
