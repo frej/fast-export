@@ -194,13 +194,14 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
       filename=file_data['filename']
       file_ctx=file_data['file_ctx']
 
-    wr(b'M %s inline %s' % (gitmode(manifest.flags(file)),
-                           strip_leading_slash(filename)))
-    wr(b'data %d' % len(d)) # had some trouble with size()
-    wr(d)
-    count+=1
-    if count%cfg_export_boundary==0:
-      sys.stderr.buffer.write(b'Exported %d/%d files\n' % (count,max))
+    if d is not None:
+      wr(b'M %s inline %s' % (gitmode(manifest.flags(file)),
+                             strip_leading_slash(filename)))
+      wr(b'data %d' % len(d)) # had some trouble with size()
+      wr(d)
+      count+=1
+      if count%cfg_export_boundary==0:
+        sys.stderr.buffer.write(b'Exported %d/%d files\n' % (count,max))
   if max>cfg_export_boundary:
     sys.stderr.buffer.write(b'Exported %d/%d files\n' % (count,max))
 
