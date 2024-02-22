@@ -1,0 +1,27 @@
+blob
+mark :1
+data 7
+good_a
+
+reset refs/heads/master
+commit refs/heads/master
+mark :2
+author Grevious Bodily Harmsworth <gbh@example.com> 1679014800 +0000
+committer Grevious Bodily Harmsworth <gbh@example.com> 1679014800 +0000
+data 2
+r0M 100644 :1 good_a.txt
+
+commit refs/heads/master
+mark :3
+author Grevious Bodily Harmsworth <gbh@example.com> 1679018400 +0000
+committer Grevious Bodily Harmsworth <gbh@example.com> 1679018400 +0000
+data 2
+r1from :2
+
+commit refs/heads/master
+mark :4
+author Grevious Bodily Harmsworth <gbh@example.com> 1679022000 +0000
+committer Grevious Bodily Harmsworth <gbh@example.com> 1679022000 +0000
+data 2
+r2from :3
+
