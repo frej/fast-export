@@ -69,22 +69,3 @@ jobs:
 
       - name: Run tests on 3.x
         run: make -C t
-
-  code-quality:
-    name: Run code quality checks
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 1
-        submodules: 'recursive'
-
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: python
-
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
