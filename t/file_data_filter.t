@@ -25,7 +25,9 @@ git_convert() {
 	cd "$2" &&
 	hg-fast-export.sh --repo "../$1" \
 			  -s --hgtags -n \
-			  --plugin ../../plugins/rename_file_test_plugin
+			  --plugin ../../plugins/rename_file_test_plugin \
+			  --plugin dos2unix \
+			  --plugin shell_filter_file_contents=../../plugins/id
 	)
 }
 
