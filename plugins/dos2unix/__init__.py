@@ -6,6 +6,8 @@ class Filter():
         pass
 
     def file_data_filter(self,file_data):
+        if file_data['file_ctx'] == None:
+            return
         file_ctx = file_data['file_ctx']
         if not file_ctx.isbinary():
             file_data['data'] = file_data['data'].replace(b'\r\n', b'\n')
