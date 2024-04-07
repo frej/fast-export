@@ -15,6 +15,8 @@ class Filter:
         d = file_data['data']
         file_ctx = file_data['file_ctx']
         filename = file_data['filename']
+        if file_ctx == None:
+            return
         filter_cmd = self.filter_contents + [filename, node.hex(file_ctx.filenode()), '1' if file_ctx.isbinary() else '0']
         try:
             filter_proc = subprocess.Popen(filter_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
