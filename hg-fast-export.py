@@ -274,7 +274,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     commit_data = {'branch': branch, 'parents': parents,
                    'author': author, 'desc': desc,
                    'revision': revision, 'hg_hash': hg_hash,
-                   'committer': user, 'extra': extra}
+                   'committer': user, 'extra': extra,
+                   'time': time, 'timezone': timezone}
     for filter in plugins['commit_message_filters']:
       filter(commit_data)
     branch = commit_data['branch']
@@ -282,6 +283,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     author = commit_data['author']
     user = commit_data['committer']
     desc = commit_data['desc'] + b'\n'
+    time = commit_data['time']
+    timezone = commit_data['timezone']
 
   if len(parents)==0 and revision != 0:
     wr(b'reset refs/heads/%s' % branch)
