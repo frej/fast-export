@@ -13,8 +13,9 @@ commit refs/heads/master
 mark :3
 author Grevious Bodily Harmsworth <gbh@example.com> 1679014800 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679014800 +0000
-data 2
-r0M 100644 :1 a.txt
+data 3
+r0
+M 100644 :1 a.txt
 M 100644 :2 b.txt
 
 blob
@@ -31,8 +32,9 @@ commit refs/tags/2019_Spring_R2
 mark :6
 author Grevious Bodily Harmsworth <gbh@example.com> 1679018400 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679018400 +0000
-data 2
-r1from :3
+data 3
+r1
+from :3
 M 100644 :4 c.txt
 M 100644 :5 d.txt
 
@@ -45,8 +47,9 @@ commit refs/heads/mainline
 mark :8
 author Grevious Bodily Harmsworth <gbh@example.com> 1679019000 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679019000 +0000
-data 51
-Added tag 2019 Spring R2 for changeset e92e41dde44ffrom :6
+data 52
+Added tag 2019 Spring R2 for changeset e92e41dde44f
+from :6
 M 100644 :7 .hgtags
 
 blob
@@ -63,8 +66,9 @@ commit refs/heads/mainline
 mark :11
 author Grevious Bodily Harmsworth <gbh@example.com> 1679022000 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679022000 +0000
-data 2
-r2from :8
+data 3
+r2
+from :8
 M 100644 :9 e.txt
 M 100644 :10 f.txt
 
@@ -72,8 +76,9 @@ commit refs/heads/mainline
 mark :12
 author badly-formed-user <devnull@localhost> 1679025600 +0000
 committer badly-formed-user <devnull@localhost> 1679025600 +0000
-data 2
-r3from :11
+data 3
+r3
+from :11
 M 100644 :9 g.txt
 M 100644 :10 h.txt
 
@@ -91,8 +96,9 @@ commit refs/heads/renamed-feature
 mark :15
 author Grevious Bodily Harmsworth <gbh@example.com> 1679029200 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679029200 +0000
-data 7
-featurefrom :12
+data 8
+feature
+from :12
 M 100644 :13 feature-a.txt
 M 100644 :14 feature-b.txt
 
@@ -105,8 +111,9 @@ commit refs/heads/valid-0
 mark :17
 author Grevious Bodily Harmsworth <gbh@example.com> 1679032800 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679032800 +0000
-data 23
-Added file in branch a?from :15
+data 24
+Added file in branch a?
+from :15
 M 100644 :16 c1086ce03e4f52aadd1c93b1d097da510138522a
 
 blob
@@ -118,8 +125,9 @@ commit refs/heads/valid-1
 mark :19
 author Grevious Bodily Harmsworth <gbh@example.com> 1679036400 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679036400 +0000
-data 23
-Added file in branch a/from :17
+data 24
+Added file in branch a/
+from :17
 M 100644 :18 85ed6fbb96d655df9f194bc9107f2d86210b9263
 
 blob
@@ -131,8 +139,9 @@ commit refs/heads/valid-2
 mark :21
 author Grevious Bodily Harmsworth <gbh@example.com> 1679040000 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679040000 +0000
-data 24
-Added file in branch a/bfrom :19
+data 25
+Added file in branch a/b
+from :19
 M 100644 :20 aae42d317509399fdda80c4d8e46774d152dbd04
 
 blob
@@ -144,8 +153,9 @@ commit refs/heads/valid-3
 mark :23
 author Grevious Bodily Harmsworth <gbh@example.com> 1679043600 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679043600 +0000
-data 24
-Added file in branch a/?from :21
+data 25
+Added file in branch a/?
+from :21
 M 100644 :22 ba54a8de7fe91c5e6e0a2dd1b9b37de0976ff5a7
 
 blob
@@ -157,8 +167,9 @@ commit refs/heads/valid-4
 mark :25
 author Grevious Bodily Harmsworth <gbh@example.com> 1679047200 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679047200 +0000
-data 23
-Added file in branch ?afrom :23
+data 24
+Added file in branch ?a
+from :23
 M 100644 :24 d4cde16119b586025976741e87775762a2598984
 
 blob
@@ -170,8 +181,9 @@ commit refs/heads/valid-5
 mark :27
 author Grevious Bodily Harmsworth <gbh@example.com> 1679050800 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679050800 +0000
-data 23
-Added file in branch a.from :25
+data 24
+Added file in branch a.
+from :25
 M 100644 :26 b4ce96ddcee0706a8c51130917f910b2b29faf77
 
 blob
@@ -183,8 +195,9 @@ commit refs/heads/valid-6
 mark :29
 author Grevious Bodily Harmsworth <gbh@example.com> 1679054400 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679054400 +0000
-data 24
-Added file in branch a.bfrom :27
+data 25
+Added file in branch a.b
+from :27
 M 100644 :28 97051191e1a92daa11165ef10770bf964268c58b
 
 blob
@@ -196,8 +209,9 @@ commit refs/heads/valid-7
 mark :31
 author Grevious Bodily Harmsworth <gbh@example.com> 1679058000 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679058000 +0000
-data 23
-Added file in branch .afrom :29
+data 24
+Added file in branch .a
+from :29
 M 100644 :30 a667f8feec02fdfa6649772f844a24cf1ad5ebec
 
 blob
@@ -209,8 +223,9 @@ commit refs/heads/valid-8
 mark :33
 author Grevious Bodily Harmsworth <gbh@example.com> 1679061600 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679061600 +0000
-data 22
-Added file in branch /from :31
+data 23
+Added file in branch /
+from :31
 M 100644 :32 8f27084b6294ddbe28dbcbf98f798730e8a79289
 
 blob
@@ -222,8 +237,9 @@ commit refs/heads/___a
 mark :35
 author Grevious Bodily Harmsworth <gbh@example.com> 1679065200 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679065200 +0000
-data 25
-Added file in branch ___3from :33
+data 26
+Added file in branch ___3
+from :33
 M 100644 :34 9b171494eb6e5ce325934b1656e286ca0510a697
 
 blob
@@ -235,8 +251,9 @@ commit refs/heads/__b
 mark :37
 author Grevious Bodily Harmsworth <gbh@example.com> 1679068800 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679068800 +0000
-data 24
-Added file in branch __2from :35
+data 25
+Added file in branch __2
+from :35
 M 100644 :36 5dca703b71d2613c6bb3262b9b1741d6165e4a2f
 
 blob
@@ -248,8 +265,9 @@ commit refs/heads/_c
 mark :39
 author Grevious Bodily Harmsworth <gbh@example.com> 1679072400 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679072400 +0000
-data 23
-Added file in branch _1from :37
+data 24
+Added file in branch _1
+from :37
 M 100644 :38 2fee90e148a2afbd911b67ced9b6240151f904ec
 
 blob
@@ -261,8 +279,9 @@ commit refs/heads/venom
 mark :41
 author Grevious Bodily Harmsworth <gbh@example.com> 1679076000 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679076000 +0000
-data 45
-Added file in branch Feature- 12V Vac "Venom"from :39
+data 46
+Added file in branch Feature- 12V Vac "Venom"
+from :39
 M 100644 :40 b01def8779aed4be2f4b7325a89992a9aa566fec
 
 blob
@@ -274,7 +293,8 @@ commit refs/heads/abc
 mark :43
 author Grevious Bodily Harmsworth <gbh@example.com> 1679079600 +0000
 committer Grevious Bodily Harmsworth <gbh@example.com> 1679079600 +0000
-data 27
-Added file in branch åäöfrom :41
+data 28
+Added file in branch åäö
+from :41
 M 100644 :42 a0d01fcbff5d86327d542687dcfd8b299d054147
 
