@@ -17,7 +17,8 @@ check() {
 }
 
 git_create() {
-	git init -q "$1"
+	git init -q "$1" &&
+	git -C "$1" config core.ignoreCase false
 }
 
 git_convert() {
