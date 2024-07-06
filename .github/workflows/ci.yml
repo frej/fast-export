@@ -37,7 +37,7 @@ jobs:
           ./hg-fast-export.sh --debug
 
       - name: Run tests on earliest supported Python version
-        run: make -C t
+        run: make TEST_OPTS="--debug" -C t
 
   test-latest:
     name: Run test suite on the latest supported python version
@@ -68,4 +68,4 @@ jobs:
           ./hg-fast-export.sh --debug
 
       - name: Run tests on 3.x
-        run: make -C t
+        run: make TEST_OPTS="--debug" -C t
