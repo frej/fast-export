@@ -281,7 +281,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     parents = commit_data['parents']
     author = commit_data['author']
     user = commit_data['committer']
-    desc = commit_data['desc'] + b'\n'
+    desc = commit_data['desc']
 
   if len(parents)==0 and revision != 0:
     wr(b'reset refs/heads/%s' % branch)
@@ -291,7 +291,7 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
   if sob:
     wr(b'author %s %d %s' % (author,time,timezone))
   wr(b'committer %s %d %s' % (user,time,timezone))
-  wr_data(desc)
+  wr_data(desc + b'\n')
 
   man=ctx.manifest()
 

@@ -17,6 +17,7 @@ git_clone() {
 	(
 	git init -q "$2" &&
 	cd "$2" &&
+	git config core.ignoreCase false &&
 	hg-fast-export.sh --repo "../$1"
 	)
 }
