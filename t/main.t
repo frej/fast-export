@@ -92,4 +92,53 @@ test_expect_success 'merge' '
 	test_cmp expected actual
 '
 
+test_expect_success 'hg large file' '
+	test_when_finished "rm -rf hgrepo gitrepo" &&
+
+	(
+	hg init hgrepo &&
+	cd hgrepo &&
+	echo "[extensions]" >> .hg/hgrc
+	echo "largefiles =" >> .hg/hgrc
+	echo a > content &&
+	echo a > file1 &&
+	hg add content &&
+	hg add --large file1 &&
+	hg commit -m "origin" &&
+
+	echo b > content &&
+	echo b > file2 &&
+	hg add --large file2 &&
+	hg rm file1 &&
+	hg commit -m "right" &&
+
+	hg update -r0 &&
+	echo c > content &&
+	hg commit -m "left" &&
+
+	HGMERGE=true hg merge -r1 &&
+	hg commit -m "merge"
+	) &&
+
+	git_clone hgrepo gitrepo &&
+
+	cat > expected <<-EOF &&
+	left
+	c
+	tree @:
+
+	content
+	file2
+	EOF
+
+	(
+	cd gitrepo
+	git show -q --format='%s' @^ &&
+	git show @:content &&
+	git show @:
+	) > actual &&
+
+	test_cmp expected actual
+'
+
 test_done

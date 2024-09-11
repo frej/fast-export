@@ -138,6 +138,15 @@ if [ "$3" == "1" ]; then cat; else dos2unix -q; fi
 -- End of crlf-filter.sh --
 ```
 
+Mercurial Largefiles Extension
+------------------------------
+
+Mercurial largefiles are exported as ordinary files into git, i.e. not
+as git lfs files. In order to make the export work, make sure that 
+you have all largefiles of all mercurial commits available locally.
+This can be ensured by either cloning the mercurial repository with 
+the option --all-largefiles or by executing the command
+'hg lfpull --rev "all()"' inside the mercurial repository.
 
 Plugins
 -----------------
