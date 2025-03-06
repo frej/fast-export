@@ -6,7 +6,7 @@ This can be useful, for example, to remove old, irrelevant history.
 To preserve original commit hashes during this process,
 you can enable the `saverev` flag:
 ```
-hg convert --config hg.convert.saverev=True ...
+hg convert --config convert.hg.saverev=True ...
 ```
 
 After such a conversion, the original hashes are
