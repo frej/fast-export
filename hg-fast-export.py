@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (c) 2007, 2008 Rocco Rutte <pdmef@gmx.net> and others.
+# Copyright (c) 2025 Siemens
 # License: MIT <http://www.opensource.org/licenses/mit-license.php>
 
 from hg2git import setup_repo,fixup_user,get_branch,get_changeset
@@ -11,6 +12,7 @@ import sys
 import os
 from binascii import hexlify
 import pluginloader
+from hgext.largefiles import lfutil
 
 # silly regex to catch Signed-off-by lines in log message
 sob_re=re.compile(b'^Signed-[Oo]ff-[Bb]y: (.+)$')
@@ -162,6 +164,32 @@ def refresh_gitmodules(ctx):
     wr(b'M 100644 inline .gitmodules')
     wr_data(gitmodules)
 
+def is_largefile(filename):
+  return filename[:6] == b'.hglf/'
+
+def largefile_orig_name(filename):
+  return filename[6:]
+
+def largefile_data(ctx, file, filename):
+  lf_file_ctx=ctx.filectx(file)
+  lf_hash=lf_file_ctx.data().strip(b'\n')
+  sys.stderr.write("Detected large file hash %s\n" % lf_hash.decode())
+  #should detect where the large files are located
+  file_with_data = lfutil.findfile(ctx.repo(), lf_hash)
+  if file_with_data is None:
+    # Autodownloading from the mercurial repository would be an issue as there
+    # is a good chance that we may need to input some username and password.
+    # This will surely break fast-export as there will be some unexpected
+    # output.
+    sys.stderr.write("Large file wasn't found in local cache.\n")
+    sys.stderr.write("Please clone with --all-largefiles\n")
+    sys.stderr.write("or pull all large files with 'hg lfpull --rev "
+            "\"all()\"'\n")
+    # closing in the middle of import will revert everything to the last checkpoint
+    sys.exit(3)
+  with open(os.path.normpath(file_with_data), 'rb') as file_with_data_handle:
+    return file_with_data_handle.read()
+
 def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
   count=0
   max=len(files)
@@ -183,8 +211,12 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
         b'Ignoring file %s which cannot be tracked by git\n' % filename
       )
       continue
-    file_ctx=ctx.filectx(file)
-    d=file_ctx.data()
+    if is_largefile(filename):
+      filename = largefile_orig_name(filename)
+      d = largefile_data(ctx, file, filename)
+    else:
+      file_ctx=ctx.filectx(file)
+      d=file_ctx.data()
 
     if plugins and plugins['file_data_filters']:
       file_data = {'filename':filename,'file_ctx':file_ctx,'data':d}
@@ -327,6 +359,8 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
     filename=strip_leading_slash(filename)
     if filename==b'.hgsub':
       remove_gitmodules(ctx)
+    if is_largefile(filename):
+      filename=largefile_orig_name(filename)
     wr(b'D %s' % filename)
 
   export_file_contents(ctx,man,modified,hgtags,fn_encoding,plugins)
