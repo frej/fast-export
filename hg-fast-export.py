@@ -539,7 +539,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   if len(state_cache) != 0:
     for (name, data) in [(marksfile, old_marks),
                          (mappingfile, mapping_cache),
-                         (headsfile, state_cache)]:
+                         (headsfile, heads_cache)]:
       check_cache(name, data)
 
   ui,repo=setup_repo(repourl)
