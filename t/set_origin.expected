@@ -1,0 +1,42 @@
+blob
+mark :1
+data 5
+zero
+
+reset refs/heads/prefix/master
+commit refs/heads/prefix/master
+mark :2
+author H G Wells <wells@example.com> 1679014800 +0000
+committer H G Wells <wells@example.com> 1679014800 +0000
+data 5
+zero
+M 100644 :1 content
+
+blob
+mark :3
+data 8
+branch1
+
+commit refs/heads/prefix/branch1
+mark :4
+author H G Wells <wells@example.com> 1679018400 +0000
+committer H G Wells <wells@example.com> 1679018400 +0000
+data 29
+Added file in branch branch1
+from :2
+M 100644 :3 b8486c4feca589a4237a1ee428322d7109ede12e
+
+blob
+mark :5
+data 8
+branch2
+
+commit refs/heads/prefix/branch2
+mark :6
+author H G Wells <wells@example.com> 1679022000 +0000
+committer H G Wells <wells@example.com> 1679022000 +0000
+data 29
+Added file in branch branch2
+from :4
+M 100644 :5 fe786baee0d76603092c25609f2967b9c28a2cf2
+

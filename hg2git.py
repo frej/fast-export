@@ -27,7 +27,7 @@ def set_default_branch(name):
 
 def set_origin_name(name):
   global origin_name
-  origin_name = name
+  origin_name = name.encode('utf8')
 
 def setup_repo(url):
   try:
