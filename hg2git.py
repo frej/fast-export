@@ -23,11 +23,11 @@ user_clean_re=re.compile(b'^["]([^"]+)["]$')
 
 def set_default_branch(name):
   global cfg_master
-  cfg_master = name.encode('utf8') if not isinstance(name, bytes) else name
+  cfg_master = name.encode('utf8')
 
 def set_origin_name(name):
   global origin_name
-  origin_name = name
+  origin_name = name.encode('utf8')
 
 def setup_repo(url):
   try:
