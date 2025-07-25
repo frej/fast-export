@@ -1,0 +1,20 @@
+blob
+mark :1
+data 7
+a_file
+
+blob
+mark :2
+data 6
+large
+
+reset refs/heads/master
+commit refs/heads/master
+mark :3
+author Grevious Bodily Harmsworth <gbh@example.com> 1679014800 +0000
+committer Grevious Bodily Harmsworth <gbh@example.com> 1679014800 +0000
+data 3
+r0
+M 100644 :1 a.txt
+M 100644 :2 b.txt
+

@@ -1,0 +1,12 @@
+filename: b'b.txt'
+data size: 6 bytes
+ctx rev: 0
+ctx binary: False
+is largefile: True
+
+filename: b'a.txt'
+data size: 7 bytes
+ctx rev: 0
+ctx binary: False
+is largefile: False
+

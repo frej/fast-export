@@ -188,7 +188,7 @@ values in the dictionary after filters have been run are used to create the git
 commit.
 
 ```
-file_data = {'filename':filename,'file_ctx':file_ctx,'data':file_contents}
+file_data = {'filename':filename,'file_ctx':file_ctx,'data':file_contents, 'is_largefile':largefile_status}
 
 def file_data_filter(self,file_data):
 ```
@@ -202,6 +202,12 @@ The `file_data_filter` method is also called when files are deleted,
 but in this case the `data` and `file_ctx` keys map to None. This is
 so that a filter which modifies file names can apply the same name
 transformations when files are deleted.
+
+The `is_largefile` entry within the `file_data` dictionary will contain
+`True` if the original file was a largefile and has been converted
+to a normal file before the plugins were invoked. In this case, the `file_ctx`
+will still point to the filecontext for the original, unconverted file, while
+`filename` and `data` will contain the already converted information.
 
 Submodules
 ----------
