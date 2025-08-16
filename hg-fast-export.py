@@ -211,15 +211,18 @@ def export_file_contents(ctx,manifest,files,hgtags,encoding='',plugins={}):
         b'Ignoring file %s which cannot be tracked by git\n' % filename
       )
       continue
+
+    largefile = False
+    file_ctx=ctx.filectx(file)
     if is_largefile(filename):
+      largefile = True
       filename = largefile_orig_name(filename)
       d = largefile_data(ctx, file, filename)
     else:
-      file_ctx=ctx.filectx(file)
       d=file_ctx.data()
 
     if plugins and plugins['file_data_filters']:
-      file_data = {'filename':filename,'file_ctx':file_ctx,'data':d}
+      file_data = {'filename':filename,'file_ctx':file_ctx,'data':d, 'is_largefile':largefile}
       for filter in plugins['file_data_filters']:
         filter(file_data)
       d=file_data['data']
