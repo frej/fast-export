@@ -87,6 +87,8 @@ Options:
 	                         with <file-path> <hg-hash> <is-binary> as arguments
 	--plugin <plugin=init>  Add a plugin with the given init string (repeatable)
 	--plugin-path <plugin-path> Add an additional plugin lookup path
+  --first-commit-hash <git-commit-hash>  Use the given git commit hash as the
+                                          first commit's parent (for grafting)
 "
 case "$1" in
     -h|--help)
