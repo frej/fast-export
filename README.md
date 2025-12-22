@@ -213,9 +213,18 @@ defined filter methods in the [dos2unix](./plugins/dos2unix) and
 [branch_name_in_commit](./plugins/branch_name_in_commit) plugins.
 
 ```
-commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision, 'hg_hash': hg_hash, 'committer': 'committer', 'extra': extra}
+commit_data = {
+  'author': author,
+  'branch': branch,
+  'committer': 'committer',
+  'desc': desc,
+  'extra': extra,
+  'hg_hash': hg_hash,
+  'parents': parents,
+  'revision': revision,
+}
 
-def commit_message_filter(self,commit_data):
+def commit_message_filter(self, commit_data):
 ```
 The `commit_message_filter` method is called for each commit, after parsing
 from hg, but before outputting to git. The dictionary `commit_data` contains the
@@ -224,9 +233,14 @@ values in the dictionary after filters have been run are used to create the git
 commit.
 
 ```
-file_data = {'filename':filename,'file_ctx':file_ctx,'data':file_contents, 'is_largefile':largefile_status}
+file_data = {
+  'data': file_contents,
+  'file_ctx': file_ctx,
+  'filename': filename,
+  'is_largefile': largefile_status,
+}
 
-def file_data_filter(self,file_data):
+def file_data_filter(self, file_data):
 ```
 The `file_data_filter` method is called for each file within each commit.
 The dictionary `file_data` contains the above attributes about the file, and
