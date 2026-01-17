@@ -141,12 +141,48 @@ if [ "$3" == "1" ]; then cat; else dos2unix -q; fi
 Mercurial Largefiles Extension
 ------------------------------
 
-Mercurial largefiles are exported as ordinary files into git, i.e. not
-as git lfs files. In order to make the export work, make sure that 
-you have all largefiles of all mercurial commits available locally.
-This can be ensured by either cloning the mercurial repository with 
-the option --all-largefiles or by executing the command
-'hg lfpull --rev "all()"' inside the mercurial repository.
+### Handling Mercurial Largefiles during Migration
+
+When migrating from Mercurial to Git, largefiles are exported as ordinary
+files by default. To ensure a successful migration and manage repository
+size, follow the requirements below.
+
+#### 1. Pre-Export: Ensure File Availability
+
+Before starting the export, you must have all largefiles from all
+Mercurial commits available locally. Use one of these methods:
+
+* **For a new clone:** `hg clone --all-largefiles <repo-url>`
+* **For an existing repo:** `hg lfpull --rev "all()"`
+
+#### 2. Choosing Your LFS Strategy
+
+If you want your files to be versioned in Git LFS rather than as standard
+Git blobs, you have two primary paths:
+
+* **[git_lfs_importer plugin](./plugins/git_lfs_importer/README.md)
+  (During Conversion)**
+  Recommended for large repos. This performs Just-In-Time (JIT) conversion
+  by identifying large files during the export and writing LFS pointers
+  immediately, skipping the need for a second pass. This also supports
+  **incremental conversion**, making it much more efficient for ongoing
+  migrations.
+* **[git lfs migrate import](https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-migrate.adoc)
+  (After Conversion)**
+  A standard two-step process: first, export the full history from Mercurial
+  to Git, then run a separate full history rewrite to move files into LFS.
+
+### Why use the git_lfs_importer plugin?
+
+For "monorepos" or very large repositories (100GiB+), the traditional
+two-step process can take days. By integrating the LFS conversion
+directly into the history export, the plugin eliminates the massive
+time overhead of a secondary history rewrite and allows for incremental
+progress.
+
+For detailed setup, see the
+[git_lfs_importer](./plugins/git_lfs_importer/README.md)
+plugin documentation.
 
 Plugins
 -----------------
@@ -177,9 +213,18 @@ defined filter methods in the [dos2unix](./plugins/dos2unix) and
 [branch_name_in_commit](./plugins/branch_name_in_commit) plugins.
 
 ```
-commit_data = {'branch': branch, 'parents': parents, 'author': author, 'desc': desc, 'revision': revision, 'hg_hash': hg_hash, 'committer': 'committer', 'extra': extra}
+commit_data = {
+  'author': author,
+  'branch': branch,
+  'committer': 'committer',
+  'desc': desc,
+  'extra': extra,
+  'hg_hash': hg_hash,
+  'parents': parents,
+  'revision': revision,
+}
 
-def commit_message_filter(self,commit_data):
+def commit_message_filter(self, commit_data):
 ```
 The `commit_message_filter` method is called for each commit, after parsing
 from hg, but before outputting to git. The dictionary `commit_data` contains the
@@ -188,9 +233,14 @@ values in the dictionary after filters have been run are used to create the git
 commit.
 
 ```
-file_data = {'filename':filename,'file_ctx':file_ctx,'data':file_contents, 'is_largefile':largefile_status}
+file_data = {
+  'data': file_contents,
+  'file_ctx': file_ctx,
+  'filename': filename,
+  'is_largefile': largefile_status,
+}
 
-def file_data_filter(self,file_data):
+def file_data_filter(self, file_data):
 ```
 The `file_data_filter` method is called for each file within each commit.
 The dictionary `file_data` contains the above attributes about the file, and

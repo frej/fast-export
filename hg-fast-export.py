@@ -284,7 +284,7 @@ def strip_leading_slash(filename):
 
 def export_commit(ui,repo,revision,old_marks,max,count,authors,
                   branchesmap,sob,brmap,hgtags,encoding='',fn_encoding='',
-                  plugins={}):
+                  first_commit_hash="",plugins={}):
   def get_branchname(name):
     if name in brmap:
       return brmap[name]
@@ -332,6 +332,9 @@ def export_commit(ui,repo,revision,old_marks,max,count,authors,
 
   if not parents:
     type='full'
+    if revision == 0 and first_commit_hash:
+      wr(b'from %s' % first_commit_hash.encode())
+      type='simple delta'
   else:
     wr(b'from %s' % revnum_to_revref(parents[0], old_marks))
     if len(parents) == 1:
@@ -526,7 +529,8 @@ def verify_heads(ui,repo,cache,force,ignore_unnamed_heads,branchesmap):
 
 def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
            authors={},branchesmap={},tagsmap={},
-           sob=False,force=False,ignore_unnamed_heads=False,hgtags=False,notes=False,encoding='',fn_encoding='',
+           sob=False,force=False,ignore_unnamed_heads=False,hgtags=False,
+           notes=False,encoding='',fn_encoding='',first_commit_hash='',
            plugins={}):
   def check_cache(filename, contents):
     if len(contents) == 0:
@@ -582,7 +586,7 @@ def hg2git(repourl,m,marksfile,mappingfile,headsfile,tipfile,
   brmap={}
   for rev in range(min,max):
     c=export_commit(ui,repo,rev,old_marks,max,c,authors,branchesmap,
-                    sob,brmap,hgtags,encoding,fn_encoding,
+                    sob,brmap,hgtags,encoding,fn_encoding,first_commit_hash,
                     plugins)
   if notes:
     for rev in range(min,max):
@@ -656,6 +660,8 @@ if __name__=='__main__':
       help="Add a plugin with the given init string <name=init>")
   parser.add_option("--subrepo-map", type="string", dest="subrepo_map",
       help="Provide a mapping file between the subrepository name and the submodule name")
+  parser.add_option("--first-commit-hash", type="string", dest="first_commit_hash",
+      help="Allow importing into an existing git repository by specifying the hash of the first commit")
 
   (options,args)=parser.parse_args()
 
@@ -735,4 +741,5 @@ if __name__=='__main__':
                   ignore_unnamed_heads=options.ignore_unnamed_heads,
                   hgtags=options.hgtags,
                   notes=options.notes,encoding=encoding,fn_encoding=fn_encoding,
+                  first_commit_hash=options.first_commit_hash,
                   plugins=plugins_dict))

@@ -1,2 +1,4 @@
 mercurial
 
+# Required for git_lfs_importer plugin
+pathspec==0.12.1
