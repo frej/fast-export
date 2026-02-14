@@ -31,6 +31,14 @@ def set_origin_name(name):
 
 def setup_repo(url):
   try:
+    # Mercurial >= 7.2 requires explicit initialization for largefile
+    # support to work.
+    from mercurial import initialization
+    initialization.init()
+  except ImportError:
+    pass
+
+  try:
     myui=ui.ui(interactive=False)
   except TypeError:
     myui=ui.ui()
